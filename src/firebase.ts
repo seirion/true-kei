@@ -88,12 +88,6 @@ export interface StockInfo {
   [key: string]: unknown
 }
 
-export interface StockPrice {
-  price: string
-  priceChange: string
-  priceChangeRate: string
-}
-
 // stocks/kospi + stocks/kosdaq → Map<code, StockInfo>
 export async function loadStocks(): Promise<Map<string, StockInfo>> {
   const snapshot = await get(ref(db, 'stocks'))
@@ -106,18 +100,6 @@ export async function loadStocks(): Promise<Map<string, StockInfo>> {
     for (const [code, info] of Object.entries(items)) {
       result.set(code.trim(), info as StockInfo)
     }
-  }
-  return result
-}
-
-// spac/price → Map<code, StockPrice> (SPAC 종목 실시간 가격)
-export async function loadPrices(): Promise<Map<string, StockPrice>> {
-  const snapshot = await get(ref(db, 'spac/price'))
-  const val = snapshot.val()
-  if (!val) return new Map()
-  const result = new Map<string, StockPrice>()
-  for (const [code, info] of Object.entries(val)) {
-    result.set(code.trim(), info as StockPrice)
   }
   return result
 }

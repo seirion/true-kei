@@ -7,10 +7,8 @@ import {
   loadWatchList,
   loadWatchNames,
   loadStocks,
-  loadPrices,
   type User,
   type StockInfo,
-  type StockPrice,
 } from './firebase'
 import './App.css'
 
@@ -20,6 +18,7 @@ interface StockRow {
   price: string
   priceChange: string
   priceChangeRate: string
+  loading?: boolean
 }
 
 function formatPrice(p: string): string {
@@ -47,7 +46,6 @@ function App() {
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
   const [stocks, setStocks] = useState<Map<string, StockInfo>>(new Map())
-  const [prices, setPrices] = useState<Map<string, StockPrice>>(new Map())
   const [activeGroup, setActiveGroup] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,16 +59,14 @@ function App() {
         setDataLoading(true)
         setError(null)
         try {
-          const [list, names, stockMap, priceMap] = await Promise.all([
+          const [list, names, stockMap] = await Promise.all([
             loadWatchList(u.uid),
             loadWatchNames(u.uid),
             loadStocks(),
-            loadPrices(),
           ])
           setWatchList(list)
           setWatchNames(names)
           setStocks(stockMap)
-          setPrices(priceMap)
         } catch (e) {
           console.error('data load failed:', e)
           setError('데이터를 불러오는 데 실패했습니다.')
@@ -85,12 +81,9 @@ function App() {
   const buildRows = (codes: string[]): StockRow[] =>
     codes.map((code) => {
       const info = stocks.get(code)
-      const price = prices.get(code)
       const nameKr = info?.nameKr ?? code
-      const currentPrice = price?.price ?? info?.prevPrice ?? '-'
-      const priceChange = price?.priceChange ?? '0'
-      const priceChangeRate = price?.priceChangeRate ?? '0'
-      return { code, nameKr, price: currentPrice, priceChange, priceChangeRate }
+      const currentPrice = info?.prevPrice ?? '-'
+      return { code, nameKr, price: currentPrice, priceChange: '0', priceChangeRate: '0', loading: true }
     })
 
   if (loading) return <div className="container center">로딩 중...</div>
