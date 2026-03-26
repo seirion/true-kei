@@ -70,8 +70,8 @@ export function AssetsView() {
       {summary && (
         <div className="summary-card">
           <div className="summary-total-row">
-            <div className="summary-total-label">총평가금액</div>
-            <div className="summary-total-value">{fmt(summary.totalEvaluationAmount)}원</div>
+            <span className="summary-total-label">총평가금액</span>
+            <span className="summary-total-value">{fmt(summary.totalEvaluationAmount)}원</span>
           </div>
           <div className="summary-grid">
             <div className="summary-cell">
@@ -79,18 +79,18 @@ export function AssetsView() {
               <span className="summary-value">{fmt(summary.netAssetAmount)}원</span>
             </div>
             <div className="summary-cell">
-              <span className="summary-label">예수금 (D+2)</span>
-              <span className="summary-value">{fmt(summary.depositAmount)}원</span>
+              <span className="summary-label">주식평가</span>
+              <span className="summary-value">{fmt(summary.stockEvaluationAmount)}원</span>
             </div>
             <div className="summary-cell">
-              <span className="summary-label">주식평가금액</span>
-              <span className="summary-value">{fmt(summary.stockEvaluationAmount)}원</span>
+              <span className="summary-label">예수금(D+2)</span>
+              <span className="summary-value">{fmt(summary.depositAmount)}원</span>
             </div>
             <div className="summary-cell">
               <span className="summary-label">매입금액</span>
               <span className="summary-value">{fmt(summary.purchaseAmountTotal)}원</span>
             </div>
-            <div className="summary-cell" style={{ gridColumn: '1 / -1' }}>
+            <div className="summary-cell" style={{ gridColumn: '2 / -1' }}>
               <span className="summary-label">{showDaily ? '일간 평가손익' : '평가손익'}</span>
               {showDaily ? (
                 <SummaryProfitValue value={assets.reduce((sum, item) => {
