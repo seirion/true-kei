@@ -3,6 +3,7 @@ import {
   signInWithGoogle,
   signOutUser,
   onAuthChanged,
+  getGoogleRedirectResult,
   loadWatchList,
   loadWatchNames,
   type User,
@@ -17,6 +18,11 @@ function App() {
   const [activeGroup, setActiveGroup] = useState(0)
 
   useEffect(() => {
+    // 리디렉트 로그인 결과 처리
+    getGoogleRedirectResult().catch((e) => {
+      console.error('redirect result error:', e)
+    })
+
     const unsubscribe = onAuthChanged(async (u) => {
       setUser(u)
       setLoading(false)
