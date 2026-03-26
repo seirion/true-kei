@@ -1,0 +1,348 @@
+.order-view {
+  padding: 1rem;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 매수/매도 탭 */
+.order-side-tabs {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.side-btn {
+  flex: 1;
+  padding: 0.7rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  background: #1a1a1a;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.side-btn.buy-btn.active {
+  background: #e53935;
+  color: #fff;
+}
+
+.side-btn.sell-btn.active {
+  background: #1565c0;
+  color: #fff;
+}
+
+.side-btn:hover:not(.active) {
+  background: #252525;
+  color: #ccc;
+}
+
+/* 섹션 */
+.order-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.order-label {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* 인풋 */
+.order-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.order-input:focus {
+  outline: none;
+  border-color: #555;
+}
+
+.order-input::placeholder {
+  color: #555;
+}
+
+/* 단가/수량 래퍼 */
+.price-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price-input-wrap .order-input {
+  flex: 1;
+}
+
+.input-unit {
+  color: #888;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.price-hint {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+.price-hint strong {
+  color: #ccc;
+}
+
+/* 종목 검색 */
+.stock-search-wrap {
+  position: relative;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 6px;
+  z-index: 100;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.search-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.search-item:last-child {
+  border-bottom: none;
+}
+
+.search-item:hover {
+  background: #333;
+}
+
+.search-name {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+}
+
+.search-code {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+/* 선택된 종목 */
+.selected-stock {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #1e1e1e;
+  border-radius: 6px;
+  border: 1px solid #2a2a2a;
+}
+
+.selected-name {
+  font-size: 0.95rem;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+.selected-code {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.selected-price {
+  margin-left: auto;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.selected-price.up { color: #ef5350; }
+.selected-price.down { color: #42a5f5; }
+
+.price-change-sm {
+  font-size: 0.82rem;
+  font-weight: 400;
+  margin-left: 0.25rem;
+}
+
+.price-loading-sm {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: #666;
+}
+
+/* 주문 유형 */
+.order-type-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.order-type-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+
+.order-type-btn.active {
+  background: #2a2a2a;
+  border-color: #666;
+  color: #e0e0e0;
+}
+
+/* 수량 빠른 버튼 */
+.qty-quick {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.qty-btn {
+  flex: 1;
+  padding: 0.35rem 0;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 5px;
+  color: #aaa;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.qty-btn:hover {
+  background: #2a2a2a;
+  color: #e0e0e0;
+}
+
+/* 보유 종목 */
+.holdings-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.holding-chip {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #bbb;
+  transition: all 0.15s;
+}
+
+.holding-chip:hover {
+  background: #2a2a2a;
+  border-color: #555;
+}
+
+.holding-chip.selected {
+  border-color: #666;
+  background: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.holding-qty {
+  color: #666;
+  font-size: 0.78rem;
+}
+
+/* 총 주문금액 */
+.order-total {
+  padding: 0.5rem 0.75rem;
+  background: #1a1a1a;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.order-total strong {
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+/* 결과/오류 */
+.order-result {
+  padding: 0.6rem 0.75rem;
+  background: #1b2e1b;
+  border: 1px solid #2e5c2e;
+  border-radius: 6px;
+  color: #81c784;
+  font-size: 0.9rem;
+}
+
+.order-error {
+  padding: 0.6rem 0.75rem;
+  background: #2e1b1b;
+  border: 1px solid #5c2e2e;
+  border-radius: 6px;
+  color: #ef9a9a;
+  font-size: 0.9rem;
+}
+
+/* 주문 버튼 */
+.order-submit-btn {
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  margin-top: 0.25rem;
+}
+
+.order-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.submit-buy {
+  background: #c62828;
+  color: #fff;
+}
+
+.submit-buy:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.submit-sell {
+  background: #1565c0;
+  color: #fff;
+}
+
+.submit-sell:hover:not(:disabled) {
+  background: #1976d2;
+}

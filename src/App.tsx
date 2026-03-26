@@ -13,6 +13,7 @@ import {
 import { KisSettingsModal, loadKisConfig } from './KisSettings'
 import { SearchModal } from './SearchModal'
 import { AssetsView } from './AssetsView'
+import { OrderView } from './OrderView'
 import { fetchPrices, type KisPrice } from './kisApi'
 import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade } from './kisWebSocket'
 import './App.css'
@@ -253,9 +254,7 @@ function App() {
             )}
 
             {activeTab === 'order' && (
-              <div className="center-text" style={{ paddingTop: '3rem', color: '#aaa' }}>
-                주식 주문 기능은 준비 중입니다.
-              </div>
+              <OrderView stocks={stocks} />
             )}
           </div>
 
