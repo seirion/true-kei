@@ -266,7 +266,7 @@ function App() {
                   buildRows(watchList[activeGroup] ?? []).map((row) => {
                     const krxChange = formatChange(row.krx?.priceChange ?? '0', row.krx?.priceChangeSign ?? '3', row.krx?.priceChangeRate ?? '0')
                     const nxtChange = row.nxt ? formatChange(row.nxt.priceChange, row.nxt.priceChangeSign, row.nxt.priceChangeRate) : null
-                    const showNxt = row.nxt !== null  // 정규장 외 시간이면 항상 표시 (데이터 있을 때)
+                    const showNxt = row.nxt !== null && parseInt(row.nxt.price, 10) > 0
                     return (
                       <div key={row.code} className="stock-row">
                         <span className="col-name">
@@ -279,7 +279,7 @@ function App() {
                           </span>
                           {showNxt && (
                             <span className={`col-price nxt-price ${nxtChange!.cls}`}>
-                              시외 {formatPrice(row.nxt!.price)}
+                              NXT {formatPrice(row.nxt!.price)}
                             </span>
                           )}
                         </span>
