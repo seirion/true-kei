@@ -2,19 +2,25 @@ import { useEffect, useState } from 'react'
 import { fetchBalance, type AssetItem, type AccountSummary } from './kisBalance'
 import './AssetsView.css'
 
-function formatNum(n: number): string {
+function fmt(n: number): string {
   return n.toLocaleString()
 }
 
 function ProfitBadge({ value, rate }: { value: number; rate?: number }) {
-  const cls = value > 0 ? 'profit-up' : value < 0 ? 'profit-down' : ''
+  const cls = value > 0 ? 'badge-up' : value < 0 ? 'badge-down' : 'badge-flat'
   const sign = value > 0 ? '+' : ''
+  const rateStr = rate !== undefined ? ` (${sign}${rate.toFixed(2)}%)` : ''
   return (
     <span className={`profit-badge ${cls}`}>
-      {sign}{formatNum(value)}
-      {rate !== undefined && ` (${sign}${rate.toFixed(2)}%)`}
+      {sign}{fmt(value)}{rateStr}
     </span>
   )
+}
+
+function SummaryProfitValue({ value }: { value: number }) {
+  const cls = value > 0 ? 'profit-up' : value < 0 ? 'profit-down' : ''
+  const sign = value > 0 ? '+' : ''
+  return <span className={`summary-value ${cls}`}>{sign}{fmt(value)}원</span>
 }
 
 export function AssetsView() {
@@ -51,35 +57,37 @@ export function AssetsView() {
     <div className="assets-view">
       {summary && (
         <div className="summary-card">
-          <div className="summary-total">
-            <span className="summary-label">총평가금액</span>
-            <span className="summary-value">{formatNum(summary.totalEvaluationAmount)}원</span>
+          <div className="summary-total-row">
+            <div className="summary-total-label">총평가금액</div>
+            <div className="summary-total-value">{fmt(summary.totalEvaluationAmount)}원</div>
           </div>
-          <div className="summary-row">
-            <span className="summary-label">순자산</span>
-            <span className="summary-value">{formatNum(summary.netAssetAmount)}원</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">예수금 (D+2)</span>
-            <span className="summary-value">{formatNum(summary.depositAmount)}원</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">주식평가금액</span>
-            <span className="summary-value">{formatNum(summary.stockEvaluationAmount)}원</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">매입금액</span>
-            <span className="summary-value">{formatNum(summary.purchaseAmountTotal)}원</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">평가손익</span>
-            <ProfitBadge value={summary.profitLossTotal} />
+          <div className="summary-grid">
+            <div className="summary-cell">
+              <span className="summary-label">순자산</span>
+              <span className="summary-value">{fmt(summary.netAssetAmount)}원</span>
+            </div>
+            <div className="summary-cell">
+              <span className="summary-label">예수금 (D+2)</span>
+              <span className="summary-value">{fmt(summary.depositAmount)}원</span>
+            </div>
+            <div className="summary-cell">
+              <span className="summary-label">주식평가금액</span>
+              <span className="summary-value">{fmt(summary.stockEvaluationAmount)}원</span>
+            </div>
+            <div className="summary-cell">
+              <span className="summary-label">매입금액</span>
+              <span className="summary-value">{fmt(summary.purchaseAmountTotal)}원</span>
+            </div>
+            <div className="summary-cell" style={{ gridColumn: '1 / -1' }}>
+              <span className="summary-label">평가손익</span>
+              <SummaryProfitValue value={summary.profitLossTotal} />
+            </div>
           </div>
         </div>
       )}
 
       <div className="assets-section-title">
-        보유 종목 ({assets.length})
+        <span>보유 종목 ({assets.length})</span>
         <button className="btn-small" onClick={load}>새로고침</button>
       </div>
 
@@ -89,13 +97,26 @@ export function AssetsView() {
         <div className="asset-list">
           {assets.map((item) => (
             <div key={item.code} className="asset-item">
-              <div className="asset-top">
+              {/* 줄 1: 종목명 + 코드 */}
+              <div className="asset-row1">
                 <span className="asset-name">{item.nameKr}</span>
                 <span className="asset-code">{item.code}</span>
-                <span className="asset-eval">{formatNum(item.evaluationAmount)}원</span>
               </div>
-              <div className="asset-bottom">
-                <span className="asset-detail">{formatNum(item.holdingQty)}주 · 평균 {formatNum(item.purchaseAvgPrice)}원</span>
+              {/* 줄 2: 수량/평균가 + 현재가 */}
+              <div className="asset-row2">
+                <span className="asset-qty-avg">
+                  {fmt(item.holdingQty)}주 · 평균 {fmt(Math.round(item.purchaseAvgPrice))}원
+                </span>
+                <div className="asset-price-block">
+                  <span className="asset-current-price">{fmt(item.currentPrice)}원</span>
+                </div>
+              </div>
+              {/* 줄 3: 평가금액 + 손익 */}
+              <div className="asset-row3">
+                <div>
+                  <span className="asset-eval-label">평가금액 </span>
+                  <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
+                </div>
                 <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
               </div>
             </div>
