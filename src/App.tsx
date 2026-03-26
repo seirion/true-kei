@@ -48,7 +48,14 @@ function App() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabId>('watchlist')
+  const [activeTab, setActiveTab] = useState<TabId>(
+    () => (localStorage.getItem('last_tab') as TabId) ?? 'watchlist'
+  )
+
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab)
+    localStorage.setItem('last_tab', tab)
+  }
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
   const [stocks, setStocks] = useState<Map<string, StockInfo>>(new Map())
@@ -252,15 +259,15 @@ function App() {
 
           {/* 하단 탭 네비게이션 */}
           <nav className="bottom-nav">
-            <button className={`nav-btn ${activeTab === 'assets' ? 'nav-active' : ''}`} onClick={() => setActiveTab('assets')}>
+            <button className={`nav-btn ${activeTab === 'assets' ? 'nav-active' : ''}`} onClick={() => handleTabChange('assets')}>
               <span className="nav-icon">💰</span>
               <span className="nav-label">총자산</span>
             </button>
-            <button className={`nav-btn ${activeTab === 'watchlist' ? 'nav-active' : ''}`} onClick={() => setActiveTab('watchlist')}>
+            <button className={`nav-btn ${activeTab === 'watchlist' ? 'nav-active' : ''}`} onClick={() => handleTabChange('watchlist')}>
               <span className="nav-icon">⭐</span>
               <span className="nav-label">관심종목</span>
             </button>
-            <button className={`nav-btn ${activeTab === 'order' ? 'nav-active' : ''}`} onClick={() => setActiveTab('order')}>
+            <button className={`nav-btn ${activeTab === 'order' ? 'nav-active' : ''}`} onClick={() => handleTabChange('order')}>
               <span className="nav-icon">📋</span>
               <span className="nav-label">주식주문</span>
             </button>
