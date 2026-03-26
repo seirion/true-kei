@@ -1,6 +1,7 @@
 import { loadKisConfig } from './KisSettings'
 
 const KIS_BASE = 'https://openapi.koreainvestment.com:9443'
+const KIS_TOKEN_PROXY = 'https://kistoken-ncgnzcdzqa-du.a.run.app'
 const TOKEN_STORAGE_KEY = 'kis_token'
 
 interface TokenCache {
@@ -36,11 +37,10 @@ async function getAccessToken(): Promise<string> {
     throw new Error('KIS API 설정이 없습니다. ⚙️ 버튼을 눌러 설정해주세요.')
   }
 
-  const res = await fetch(`${KIS_BASE}/oauth2/tokenP`, {
+  const res = await fetch(`${KIS_TOKEN_PROXY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      grant_type: 'client_credentials',
       appkey: config.appKey,
       appsecret: config.appSecret,
     }),
