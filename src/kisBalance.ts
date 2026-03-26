@@ -73,10 +73,12 @@ export async function fetchBalance(): Promise<{ assets: AssetItem[]; summary: Ac
       }
     }
 
-    // 연속 조회 여부
-    if (data.ctx_area_fk100?.trim() && data.ctx_area_nk100?.trim()) {
-      fk100 = data.ctx_area_fk100
-      nk100 = data.ctx_area_nk100
+    // 연속 조회 여부 — fk100/nk100 모두 공백이면 마지막 페이지
+    const nextFk = data.ctx_area_fk100?.trim() ?? ''
+    const nextNk = data.ctx_area_nk100?.trim() ?? ''
+    if (nextFk && nextNk && (nextFk !== fk100 || nextNk !== nk100)) {
+      fk100 = nextFk
+      nk100 = nextNk
     } else {
       break
     }

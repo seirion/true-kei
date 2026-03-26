@@ -40,7 +40,12 @@ export function AssetsView() {
   useEffect(() => { load() }, [])
 
   if (loading) return <div className="assets-center">잔고 조회 중...</div>
-  if (error) return <div className="assets-center error-msg">{error}</div>
+  if (error) return (
+    <div className="assets-center" style={{ flexDirection: 'column', gap: '1rem' }}>
+      <div className="error-msg" style={{ margin: 0 }}>{error}</div>
+      <button className="btn-small" onClick={load}>다시 시도</button>
+    </div>
+  )
 
   return (
     <div className="assets-view">

@@ -46,8 +46,15 @@ export async function getAccessToken(): Promise<string> {
     }),
   })
 
-  if (!res.ok) throw new Error(`토큰 발급 실패: ${res.status}`)
+  if (!res.ok) {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+    throw new Error(`토큰 발급 실패: ${res.status}`)
+  }
   const data = await res.json()
+  if (!data.access_token) {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+    throw new Error(data.error_description ?? '토큰 발급 실패')
+  }
   const token = data.access_token as string
   const expiresIn = (data.expires_in as number) ?? 86400
   saveTokenCache(token, expiresIn)
