@@ -6,12 +6,13 @@ function fmt(n: number): string {
   return n.toLocaleString()
 }
 
-function ProfitBadge({ value, rate }: { value: number; rate?: number }) {
+function ProfitBadge({ value, rate, label }: { value: number; rate?: number; label?: string }) {
   const cls = value > 0 ? 'badge-up' : value < 0 ? 'badge-down' : 'badge-flat'
   const sign = value > 0 ? '+' : ''
   const rateStr = rate !== undefined ? ` (${sign}${rate.toFixed(2)}%)` : ''
   return (
     <span className={`profit-badge ${cls}`}>
+      {label && <span style={{ opacity: 0.7, marginRight: 3 }}>{label}</span>}
       {sign}{fmt(value)}{rateStr}
     </span>
   )
@@ -28,6 +29,7 @@ export function AssetsView() {
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [summary, setSummary] = useState<AccountSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showDaily, setShowDaily] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -88,7 +90,19 @@ export function AssetsView() {
 
       <div className="assets-section-title">
         <span>보유 종목 ({assets.length})</span>
-        <button className="btn-small" onClick={load}>새로고침</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="profit-toggle">
+            <button
+              className={`toggle-btn ${!showDaily ? 'toggle-active' : ''}`}
+              onClick={() => setShowDaily(false)}
+            >총수익</button>
+            <button
+              className={`toggle-btn ${showDaily ? 'toggle-active' : ''}`}
+              onClick={() => setShowDaily(true)}
+            >일간수익</button>
+          </div>
+          <button className="btn-small" onClick={load}>새로고침</button>
+        </div>
       </div>
 
       {assets.length === 0 ? (
@@ -117,7 +131,10 @@ export function AssetsView() {
                   <span className="asset-eval-label">평가금액 </span>
                   <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
                 </div>
-                <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
+                {showDaily
+                  ? <ProfitBadge value={item.dailyProfitLoss} rate={item.priceChangeRate} label="일간" />
+                  : <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
+                }
               </div>
             </div>
           ))}

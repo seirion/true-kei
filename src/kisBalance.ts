@@ -10,9 +10,12 @@ export interface AssetItem {
   purchaseAvgPrice: number
   purchaseAmount: number
   currentPrice: number
+  priceChange: number      // 전일 대비 가격 변동
+  priceChangeRate: number  // 전일 대비 등락률 (%)
   evaluationAmount: number
-  profitLossAmount: number
-  profitLossRate: number
+  profitLossAmount: number // 총 평가손익
+  profitLossRate: number   // 총 평가손익률
+  dailyProfitLoss: number  // 일간 손익 = priceChange * holdingQty
 }
 
 export interface AccountSummary {
@@ -47,16 +50,21 @@ export async function fetchBalance(): Promise<{ assets: AssetItem[]; summary: Ac
     // 보유 종목
     for (const item of data.output1 ?? []) {
       if (parseInt(item.hldg_qty, 10) <= 0) continue
+      const holdingQty = parseInt(item.hldg_qty, 10)
+      const priceChange = parseInt(item.bfdy_cprs_icdc, 10) || 0
       assets.push({
         code: item.pdno,
         nameKr: item.prdt_name,
-        holdingQty: parseInt(item.hldg_qty, 10),
+        holdingQty,
         purchaseAvgPrice: parseFloat(item.pchs_avg_pric),
         purchaseAmount: parseInt(item.pchs_amt, 10),
         currentPrice: parseInt(item.prpr, 10),
+        priceChange,
+        priceChangeRate: parseFloat(item.fltt_rt) || 0,
         evaluationAmount: parseInt(item.evlu_amt, 10),
         profitLossAmount: parseInt(item.evlu_pfls_amt, 10),
         profitLossRate: parseFloat(item.evlu_pfls_rt),
+        dailyProfitLoss: priceChange * holdingQty,
       })
     }
 
