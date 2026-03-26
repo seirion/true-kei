@@ -95,11 +95,9 @@ export function AssetsView() {
               {showDaily ? (
                 <SummaryProfitValue value={assets.reduce((sum, item) => {
                   const live = livePrices.get(item.code)
-                  const toSigned2 = (abs: number, sign?: string) =>
-                    (sign === '4' || sign === '5') ? -abs : abs
-                  const dailyChange = live
-                    ? toSigned2(parseInt(live.priceChange, 10), live.priceChangeSign)
-                    : item.priceChange
+                  const curP = live ? parseInt(live.price, 10) : item.currentPrice
+                  const prevP = live ? parseInt(live.prevPrice, 10) : (item.currentPrice - item.priceChange)
+                  const dailyChange = curP - prevP
                   return sum + dailyChange * item.holdingQty
                 }, 0)} />
               ) : (
@@ -152,16 +150,11 @@ export function AssetsView() {
                 // 일간 손익: (현재가 - 전일종가) × 수량
                 // live.priceChange 는 절댓값, sign으로 방향 결정
                 const live = livePrices.get(item.code)
-                // priceChange는 절댓값, sign으로 방향 결정
-                // sign: 1=상한 2=상승 3=보합 4=하한 5=하락
-                const toSigned = (abs: number, sign?: string) =>
-                  (sign === '4' || sign === '5') ? -abs : abs
-                const dailyChange = live
-                  ? toSigned(parseInt(live.priceChange, 10), live.priceChangeSign)
-                  : item.priceChange
-                const dailyRate = live
-                  ? toSigned(parseFloat(live.priceChangeRate), live.priceChangeSign)
-                  : item.priceChangeRate
+                // 일간 손익 = (현재가 - 전일종가) × 수량
+                const curPrice = live ? parseInt(live.price, 10) : item.currentPrice
+                const prevPrice = live ? parseInt(live.prevPrice, 10) : (item.currentPrice - item.priceChange)
+                const dailyChange = curPrice - prevPrice
+                const dailyRate = prevPrice > 0 ? dailyChange / prevPrice * 100 : 0
                 const dailyPnl = dailyChange * item.holdingQty
                 return (
                   <div className="asset-row3">

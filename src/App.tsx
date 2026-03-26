@@ -126,7 +126,9 @@ function App() {
       (trade: RealTimeTrade) => {
         const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
         const info: KisPrice = {
-          price: String(trade.price), priceChange: String(Math.abs(trade.delta)),
+          price: String(trade.price),
+          prevPrice: String(Math.round(trade.price - trade.delta)),
+          priceChange: String(Math.abs(trade.delta)),
           priceChangeSign: sign, priceChangeRate: String(Math.abs(trade.rate)),
         }
         if (trade.isNxt) setNxtPrices(prev => new Map(prev).set(trade.code, info))

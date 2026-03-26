@@ -62,8 +62,9 @@ export async function getAccessToken(): Promise<string> {
 }
 
 export interface KisPrice {
-  price: string        // stck_prpr 현재가
-  priceChange: string  // prdy_vrss 전일 대비
+  price: string           // stck_prpr 현재가
+  prevPrice: string       // stck_sdpr 전일종가
+  priceChange: string     // prdy_vrss 전일 대비 (절댓값)
   priceChangeSign: string // 1:상한 2:상승 3:보합 4:하한 5:하락
   priceChangeRate: string // prdy_ctrt 등락률
 }
@@ -90,6 +91,7 @@ export async function fetchPrice(code: string, token: string, market = 'J'): Pro
   const o = data.output
   return {
     price: o.stck_prpr,
+    prevPrice: o.stck_sdpr,   // 전일종가
     priceChange: o.prdy_vrss,
     priceChangeSign: o.prdy_vrss_sign,
     priceChangeRate: o.prdy_ctrt,
