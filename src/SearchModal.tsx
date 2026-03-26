@@ -4,11 +4,16 @@ import './SearchModal.css'
 
 interface Props {
   stocks: Map<string, StockInfo>
+  watchList: string[][]
+  activeGroup: number
+  uid: string
+  onWatchListChange: (newList: string[][]) => void
   onClose: () => void
 }
 
-export function SearchModal({ stocks, onClose }: Props) {
+export function SearchModal({ stocks, watchList, activeGroup, uid, onWatchListChange, onClose }: Props) {
   const [query, setQuery] = useState('')
+  const [saving, setSaving] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -17,6 +22,28 @@ export function SearchModal({ stocks, onClose }: Props) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  const currentGroup = watchList[activeGroup] ?? []
+  const isInGroup = (code: string) => currentGroup.includes(code)
+
+  const handleToggle = async (code: string) => {
+    setSaving(code)
+    try {
+      const { saveWatchList } = await import('./firebase')
+      const newList = watchList.map((g, i) => {
+        if (i !== activeGroup) return g
+        return isInGroup(code)
+          ? g.filter(c => c !== code)
+          : [...g, code]
+      })
+      await saveWatchList(uid, newList)
+      onWatchListChange(newList)
+    } catch (e) {
+      console.error('watchList save failed:', e)
+    } finally {
+      setSaving(null)
+    }
+  }
 
   const q = query.trim().toLowerCase()
   const results = q.length < 1 ? [] : [...stocks.entries()]
@@ -47,12 +74,24 @@ export function SearchModal({ stocks, onClose }: Props) {
           ) : results.length === 0 ? (
             <p className="search-hint">검색 결과가 없습니다</p>
           ) : (
-            results.map(([code, info]) => (
-              <div key={code} className="search-item">
-                <span className="search-name">{info.nameKr}</span>
-                <span className="search-code">{code}</span>
-              </div>
-            ))
+            results.map(([code, info]) => {
+              const on = isInGroup(code)
+              const isSaving = saving === code
+              return (
+                <div key={code} className="search-item">
+                  <span className="search-name">{info.nameKr}</span>
+                  <span className="search-code">{code}</span>
+                  <button
+                    className={`fav-btn ${on ? 'fav-on' : 'fav-off'}`}
+                    onClick={() => handleToggle(code)}
+                    disabled={isSaving}
+                    title={on ? '관심 종목 제거' : '관심 종목 추가'}
+                  >
+                    {isSaving ? '…' : on ? '★' : '☆'}
+                  </button>
+                </div>
+              )
+            })
           )}
         </div>
       </div>

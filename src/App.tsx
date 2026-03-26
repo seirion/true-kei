@@ -236,7 +236,19 @@ function App() {
           </header>
 
           {showKisSettings && <KisSettingsModal onClose={closeKisSettings} />}
-          {showSearch && <SearchModal stocks={stocks} onClose={closeSearch} />}
+          {showSearch && (
+            <SearchModal
+              stocks={stocks}
+              watchList={watchList}
+              activeGroup={activeGroup}
+              uid={user.uid}
+              onWatchListChange={(newList) => {
+                watchListRef.current = newList
+                setWatchList(newList)
+              }}
+              onClose={closeSearch}
+            />
+          )}
           {error && <div className="error-msg">{error}</div>}
 
           {dataLoading ? (

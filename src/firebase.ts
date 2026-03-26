@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
-import { getDatabase, ref, get } from 'firebase/database'
+import { getDatabase, ref, get, set } from 'firebase/database'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -58,6 +58,11 @@ export function onAuthChanged(callback: (user: User | null) => void) {
 export type { User }
 
 const MAX_GROUP_SIZE = 10
+
+// users/{uid}/watch 저장
+export async function saveWatchList(uid: string, list: string[][]): Promise<void> {
+  await set(ref(db, `users/${uid}/watch`), list)
+}
 
 // users/{uid}/watch — List<List<String>> 또는 Map<string, string[]>
 export async function loadWatchList(uid: string): Promise<string[][]> {
