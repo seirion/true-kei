@@ -99,6 +99,76 @@ export const kisBalance = onRequest(
   }
 );
 
+// KIS 주식 주문 프록시 (매수: TTTC0802U / 매도: TTTC0801U)
+export const kisOrder = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "POST") { res.status(405).send("Method Not Allowed"); return; }
+    const { token, appkey, appsecret, cano, acntPrdtCd, side, PDNO, ORD_DVSN, ORD_QTY, ORD_UNPR } =
+      req.body as Record<string, string>;
+    if (!token || !appkey || !appsecret || !cano || !acntPrdtCd || !side || !PDNO || !ORD_DVSN || !ORD_QTY) {
+      res.status(400).json({ error: "required params missing" }); return;
+    }
+    const trId = side === "buy" ? "TTTC0802U" : "TTTC0801U";
+    try {
+      const response = await fetch(
+        `${KIS_BASE}/uapi/domestic-stock/v1/trading/order-cash`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            appkey, appsecret, tr_id: trId, custtype: "P",
+          },
+          body: JSON.stringify({
+            CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
+            PDNO, ORD_DVSN, ORD_QTY, ORD_UNPR: ORD_UNPR ?? "0",
+          }),
+        }
+      );
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      console.error("kisOrder error:", e);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// KIS 매수 가능 조회 프록시 (TTTC8908R)
+export const kisInquirePsbl = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "GET") { res.status(405).send("Method Not Allowed"); return; }
+    const { token, appkey, appsecret, cano, acntPrdtCd, PDNO, ORD_UNPR, ORD_DVSN } =
+      req.query as Record<string, string>;
+    if (!token || !appkey || !appsecret || !cano || !acntPrdtCd || !PDNO || !ORD_UNPR) {
+      res.status(400).json({ error: "required params missing" }); return;
+    }
+    try {
+      const params = new URLSearchParams({
+        CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
+        PDNO, ORD_UNPR, ORD_DVSN: ORD_DVSN ?? "00",
+        CMA_EVLU_AMT_ICLD_YN: "N", OVRS_ICLD_YN: "N",
+      });
+      const response = await fetch(
+        `${KIS_BASE}/uapi/domestic-stock/v1/trading/inquire-psbl-order?${params}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            appkey, appsecret, tr_id: "TTTC8908R", custtype: "P",
+          },
+        }
+      );
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      console.error("kisInquirePsbl error:", e);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // KIS 현재가 조회 프록시
 export const kisPrice = onRequest(
   { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },

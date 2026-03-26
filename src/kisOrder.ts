@@ -1,7 +1,6 @@
 import { loadKisConfig } from './KisSettings'
 import { getAccessToken } from './kisApi'
 
-// TODO: Firebase Cloud Function으로 kisOrder 프록시 배포 후 URL 업데이트
 const KIS_ORDER_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisOrder'
 const KIS_INQUIRE_PSBL_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisInquirePsbl'
 
