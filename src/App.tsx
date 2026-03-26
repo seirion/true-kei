@@ -122,7 +122,7 @@ function App() {
   const handleGroupChange = useCallback((idx: number) => {
     setActiveGroup(idx)
     setPrices(new Map())
-    setNxtPrices(new Map())
+    setNxtPrices(new Map())  // NXT도 초기화 (새 그룹에서 재조회)
 
     const codes = [...new Set((watchListRef.current[idx] ?? []).filter(Boolean))]
     if (codes.length === 0) return
@@ -174,13 +174,19 @@ function App() {
     setPriceLoading(true)
     setError(null)
     try {
+      // KRX 현재가
       const result = new Map<string, KisPrice>()
       await fetchPrices(codes, (code, price) => {
-        if (price) {
-          result.set(code, price)
-          setPrices(new Map(result))
-        }
-      })
+        if (price) { result.set(code, price); setPrices(new Map(result)) }
+      }, 'J')
+
+      // NXT 시간대 (08:00~09:00, 15:30~20:00) 또는 20:00 이후엔 NXT 종가도 조회
+      if (!isRegularHour()) {
+        const nxtResult = new Map<string, KisPrice>()
+        await fetchPrices(codes, (code, price) => {
+          if (price) { nxtResult.set(code, price); setNxtPrices(new Map(nxtResult)) }
+        }, 'NX')
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '현재가 조회 실패'
       setError(msg)
@@ -262,7 +268,7 @@ function App() {
                   buildRows(watchList[activeGroup] ?? []).map((row) => {
                     const krxChange = formatChange(row.krx?.priceChange ?? '0', row.krx?.priceChangeSign ?? '3', row.krx?.priceChangeRate ?? '0')
                     const nxtChange = row.nxt ? formatChange(row.nxt.priceChange, row.nxt.priceChangeSign, row.nxt.priceChangeRate) : null
-                    const showNxt = !isRegularHour() && row.nxt !== null
+                    const showNxt = row.nxt !== null  // 정규장 외 시간이면 항상 표시 (데이터 있을 때)
                     return (
                       <div key={row.code} className="stock-row">
                         <span className="col-name">

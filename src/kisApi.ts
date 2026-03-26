@@ -61,13 +61,14 @@ export interface KisPrice {
   priceChangeRate: string // prdy_ctrt 등락률
 }
 
-export async function fetchPrice(code: string, token: string): Promise<KisPrice | null> {
+export async function fetchPrice(code: string, token: string, market = 'J'): Promise<KisPrice | null> {
   const config = loadKisConfig()
   const params = new URLSearchParams({
     code,
     token,
     appkey: config.appKey,
     appsecret: config.appSecret,
+    market,
   })
   const res = await fetch(`${KIS_PRICE_PROXY}?${params}`)
   if (!res.ok) {
@@ -91,14 +92,15 @@ export async function fetchPrice(code: string, token: string): Promise<KisPrice 
 // 여러 종목 현재가를 순차 조회 (API 부하 방지용 딜레이 포함)
 export async function fetchPrices(
   codes: string[],
-  onProgress?: (code: string, price: KisPrice | null) => void
+  onProgress?: (code: string, price: KisPrice | null) => void,
+  market = 'J'
 ): Promise<Map<string, KisPrice>> {
   const token = await getAccessToken()
   const result = new Map<string, KisPrice>()
 
   for (const code of codes) {
     try {
-      const price = await fetchPrice(code, token)
+      const price = await fetchPrice(code, token, market)
       if (price) {
         result.set(code, price)
         onProgress?.(code, price)

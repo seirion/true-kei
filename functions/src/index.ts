@@ -84,9 +84,11 @@ export const kisPrice = onRequest(
       return;
     }
 
+    const market = (req.query.market as string) || "J"; // J=KRX, NX=NXT
+
     try {
       const response = await fetch(
-        `${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`,
+        `${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=${market}&FID_INPUT_ISCD=${code}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

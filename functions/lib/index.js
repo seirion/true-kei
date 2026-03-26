@@ -68,8 +68,9 @@ exports.kisPrice = (0, https_1.onRequest)({ region: "asia-northeast3", cors: ALL
         res.status(400).json({ error: "code, token, appkey, appsecret are required" });
         return;
     }
+    const market = req.query.market || "J"; // J=KRX, NX=NXT
     try {
-        const response = await fetch(`${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`, {
+        const response = await fetch(`${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=${market}&FID_INPUT_ISCD=${code}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 appkey,
