@@ -107,6 +107,11 @@ export class KisWebSocket {
     })
   }
 
+  unsubscribeAll() {
+    const codes = [...this.subscribedCodes]
+    this.unsubscribe(codes)
+  }
+
   private getTrId(): string {
     // NXT 운영 시간: 08:00~09:00, 15:30~20:00
     const now = new Date()

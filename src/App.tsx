@@ -25,8 +25,8 @@ interface PriceInfo {
 interface StockRow {
   code: string
   nameKr: string
-  krx: PriceInfo | null  // KRX 가격 (REST API)
-  nxt: PriceInfo | null  // NXT 가격 (WebSocket)
+  krx: PriceInfo | null
+  nxt: PriceInfo | null
   priceLoading: boolean
 }
 
@@ -65,7 +65,11 @@ function App() {
   const [showKisSettings, setShowKisSettings] = useState(false)
   const closeKisSettings = useCallback(() => setShowKisSettings(false), [])
   const [wsConnected, setWsConnected] = useState(false)
+
+  // refs — 렌더링 없이 최신값 유지
   const kisWsRef = useRef<KisWebSocket | null>(null)
+  const approvalKeyRef = useRef<string>('')
+  const watchListRef = useRef<string[][]>([])
 
   useEffect(() => {
     getGoogleRedirectResult().catch((e) => console.error('redirect result error:', e))
@@ -82,18 +86,23 @@ function App() {
             loadWatchNames(u.uid),
             loadStocks(),
           ])
+          watchListRef.current = list
           setWatchList(list)
           setWatchNames(names)
           setStocks(stockMap)
 
-          // KIS 설정이 있으면 현재가 1회 조회 후 WebSocket 실시간 연결
+          // KIS 설정 있으면 Approval Key 발급 후 0번 그룹 로드
           const cfg = loadKisConfig()
           if (cfg.appKey && cfg.appSecret) {
-            const allCodes = [...new Set(list.flat().filter(Boolean))]
-            if (allCodes.length > 0) {
-              loadAllPrices(allCodes)
-              initWebSocket(cfg.appKey, cfg.appSecret, allCodes)
+            try {
+              const key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret)
+              approvalKeyRef.current = key
+              initWsWithCodes(key, list[0] ?? [])
+            } catch (e) {
+              console.error('Approval key failed:', e)
             }
+            const codes = [...new Set((list[0] ?? []).filter(Boolean))]
+            if (codes.length > 0) loadGroupPrices(codes)
           }
         } catch (e) {
           console.error('data load failed:', e)
@@ -109,36 +118,59 @@ function App() {
     }
   }, [])
 
-  const initWebSocket = async (appKey: string, appSecret: string, codes: string[]) => {
-    try {
-      const approvalKey = await fetchWsApprovalKey(appKey, appSecret)
-      const kisWs = new KisWebSocket(
-        approvalKey,
-        (trade: RealTimeTrade) => {
-          const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
-          const info: KisPrice = {
-            price: String(trade.price),
-            priceChange: String(Math.abs(trade.delta)),
-            priceChangeSign: sign,
-            priceChangeRate: String(Math.abs(trade.rate)),
-          }
-          if (trade.isNxt) {
-            setNxtPrices(prev => new Map(prev).set(trade.code, info))
-          } else {
-            setPrices(prev => new Map(prev).set(trade.code, info))
-          }
-        },
-        setWsConnected
-      )
-      kisWsRef.current = kisWs
-      kisWs.connect()
-      kisWs.subscribe(codes)
-    } catch (e) {
-      console.error('WebSocket init failed:', e)
+  // 그룹 변경 시 가격 초기화 후 해당 그룹만 재조회
+  const handleGroupChange = useCallback((idx: number) => {
+    setActiveGroup(idx)
+    setPrices(new Map())
+    setNxtPrices(new Map())
+
+    const codes = [...new Set((watchListRef.current[idx] ?? []).filter(Boolean))]
+    if (codes.length === 0) return
+
+    const cfg = loadKisConfig()
+    if (!cfg.appKey || !cfg.appSecret) return
+
+    // WebSocket 재구독
+    if (kisWsRef.current) {
+      kisWsRef.current.unsubscribeAll()
+      kisWsRef.current.subscribe(codes)
+    } else if (approvalKeyRef.current) {
+      initWsWithCodes(approvalKeyRef.current, watchListRef.current[idx] ?? [])
     }
+
+    // REST 현재가 조회
+    loadGroupPrices(codes)
+  }, [])
+
+  const initWsWithCodes = (approvalKey: string, rawCodes: string[]) => {
+    kisWsRef.current?.disconnect()
+    const codes = [...new Set(rawCodes.filter(Boolean))]
+    if (codes.length === 0) return
+
+    const kisWs = new KisWebSocket(
+      approvalKey,
+      (trade: RealTimeTrade) => {
+        const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
+        const info: KisPrice = {
+          price: String(trade.price),
+          priceChange: String(Math.abs(trade.delta)),
+          priceChangeSign: sign,
+          priceChangeRate: String(Math.abs(trade.rate)),
+        }
+        if (trade.isNxt) {
+          setNxtPrices(prev => new Map(prev).set(trade.code, info))
+        } else {
+          setPrices(prev => new Map(prev).set(trade.code, info))
+        }
+      },
+      setWsConnected
+    )
+    kisWsRef.current = kisWs
+    kisWs.connect()
+    kisWs.subscribe(codes)
   }
 
-  const loadAllPrices = async (codes: string[]) => {
+  const loadGroupPrices = async (codes: string[]) => {
     setPriceLoading(true)
     setError(null)
     try {
@@ -146,7 +178,7 @@ function App() {
       await fetchPrices(codes, (code, price) => {
         if (price) {
           result.set(code, price)
-          setPrices(new Map(result)) // 종목별로 점진적 업데이트
+          setPrices(new Map(result))
         }
       })
     } catch (e: unknown) {
@@ -162,29 +194,18 @@ function App() {
       const info = stocks.get(code)
       const p = prices.get(code)
       const nxt = nxtPrices.get(code)
-
-      // KRX: REST API 결과 (없으면 prevPrice)
       const krx: PriceInfo = p
         ? { price: p.price, priceChange: p.priceChange, priceChangeSign: p.priceChangeSign, priceChangeRate: p.priceChangeRate }
         : { price: info?.prevPrice ?? '-', priceChange: '0', priceChangeSign: '3', priceChangeRate: '0' }
-
-      // NXT: WebSocket 실시간 (NXT 시간대에만 표시)
       const nxtInfo: PriceInfo | null = nxt
         ? { price: nxt.price, priceChange: nxt.priceChange, priceChangeSign: nxt.priceChangeSign, priceChangeRate: nxt.priceChangeRate }
         : null
-
-      return {
-        code,
-        nameKr: info?.nameKr ?? code,
-        krx,
-        nxt: nxtInfo,
-        priceLoading: !p && priceLoading,
-      }
+      return { code, nameKr: info?.nameKr ?? code, krx, nxt: nxtInfo, priceLoading: !p && priceLoading }
     })
 
-  if (loading) return <div className="container center">로딩 중...</div>
+  const currentCodes = [...new Set((watchList[activeGroup] ?? []).filter(Boolean))]
 
-  const allCodes = [...new Set(watchList.flat().filter(Boolean))]
+  if (loading) return <div className="container center">로딩 중...</div>
 
   return (
     <div className="container">
@@ -193,37 +214,20 @@ function App() {
           <header className="header">
             <h1>참교육 K</h1>
             <div className="user-info">
-              {user.photoURL && (
-                <img src={user.photoURL} alt="profile" className="avatar-sm" />
-              )}
+              {user.photoURL && <img src={user.photoURL} alt="profile" className="avatar-sm" />}
               <span>{user.displayName}</span>
               <span className={`ws-badge ${wsConnected ? 'ws-on' : 'ws-off'}`} title={wsConnected ? '실시간 연결됨' : '실시간 연결 끊김'}>
                 {wsConnected ? '● 실시간' : '○ 대기'}
               </span>
-              <button
-                className="btn btn-icon"
-                onClick={() => setShowKisSettings(true)}
-                title="KIS API 설정"
-              >
-                ⚙️
-              </button>
-              {!priceLoading && allCodes.length > 0 && (
-                <button
-                  className="btn btn-refresh"
-                  onClick={() => loadAllPrices(allCodes)}
-                  title="현재가 새로고침"
-                >
-                  🔄
-                </button>
+              <button className="btn btn-icon" onClick={() => setShowKisSettings(true)} title="KIS API 설정">⚙️</button>
+              {!priceLoading && currentCodes.length > 0 && (
+                <button className="btn btn-refresh" onClick={() => loadGroupPrices(currentCodes)} title="현재가 새로고침">🔄</button>
               )}
-              <button className="btn btn-signout" onClick={signOutUser}>
-                로그아웃
-              </button>
+              <button className="btn btn-signout" onClick={signOutUser}>로그아웃</button>
             </div>
           </header>
 
           {showKisSettings && <KisSettingsModal onClose={closeKisSettings} />}
-
           {error && <div className="error-msg">{error}</div>}
 
           {dataLoading ? (
@@ -235,7 +239,7 @@ function App() {
                   <button
                     key={i}
                     className={`tab ${activeGroup === i ? 'active' : ''}`}
-                    onClick={() => setActiveGroup(i)}
+                    onClick={() => handleGroupChange(i)}
                   >
                     {watchNames[i] || `그룹 ${i}`}
                   </button>
@@ -244,7 +248,7 @@ function App() {
 
               {priceLoading && (
                 <div className="price-loading">
-                  현재가 조회 중... ({prices.size}/{allCodes.length})
+                  현재가 조회 중... ({prices.size}/{currentCodes.length})
                 </div>
               )}
 
@@ -254,8 +258,8 @@ function App() {
                   <span className="col-price-wrap">현재가{!isRegularHour() && isNxtHour() ? ' / 시외' : ''}</span>
                   <span className="col-change-wrap">등락</span>
                 </div>
-                {(watchList[activeGroup]?.length ?? 0) > 0 ? (
-                  buildRows(watchList[activeGroup]).map((row) => {
+                {currentCodes.length > 0 ? (
+                  buildRows(watchList[activeGroup] ?? []).map((row) => {
                     const krxChange = formatChange(row.krx?.priceChange ?? '0', row.krx?.priceChangeSign ?? '3', row.krx?.priceChangeRate ?? '0')
                     const nxtChange = row.nxt ? formatChange(row.nxt.priceChange, row.nxt.priceChangeSign, row.nxt.priceChangeRate) : null
                     const showNxt = !isRegularHour() && row.nxt !== null
