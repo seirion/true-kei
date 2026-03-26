@@ -254,7 +254,7 @@ function App() {
             )}
 
             {activeTab === 'order' && (
-              <OrderView stocks={stocks} />
+              <OrderView stocks={stocks} approvalKey={approvalKeyRef.current} />
             )}
           </div>
 

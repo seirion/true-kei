@@ -1,10 +1,168 @@
-.order-view {
-  padding: 1rem;
-  max-width: 480px;
-  margin: 0 auto;
+/* 전체 좌우 레이아웃 */
+.order-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ===== 호가창 (좌측) ===== */
+.orderbook-panel {
+  width: 160px;
+  min-width: 140px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  border-right: 1px solid #2a2a2a;
+  background: #111;
+  overflow-y: auto;
+}
+
+.ob-title {
+  font-size: 0.72rem;
+  color: #666;
+  text-align: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #222;
+  letter-spacing: 0.04em;
+}
+
+.ob-empty {
+  color: #555;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.ob-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ob-row {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.ob-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+/* 매도 행: 수량(좌) | 가격(우) */
+.ob-ask {
+  flex-direction: row;
+}
+
+/* 매수 행: 가격(좌) | 수량(우) */
+.ob-bid {
+  flex-direction: row;
+}
+
+.ob-price {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 0 4px;
+  min-width: 60px;
+  text-align: right;
+}
+
+.ob-ask-price {
+  color: #42a5f5;   /* 매도: 파랑 */
+  flex: 0 0 auto;
+}
+
+.ob-bid-price {
+  color: #ef5350;   /* 매수: 빨강 */
+  flex: 0 0 auto;
+}
+
+.ob-qty {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.ob-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  opacity: 0.18;
+}
+
+.ob-ask-bar {
+  background: #42a5f5;
+  right: 0;
+}
+
+.ob-bid-bar {
+  background: #ef5350;
+  left: 0;
+}
+
+.ob-qty-text {
+  position: relative;
+  font-size: 0.72rem;
+  color: #777;
+  padding: 0 4px;
+  z-index: 1;
+  white-space: nowrap;
+  width: 100%;
+  text-align: right;
+}
+
+.ob-ask .ob-qty-text {
+  text-align: right;
+}
+
+.ob-bid .ob-qty-text {
+  text-align: left;
+}
+
+/* 현재가 구분선 */
+.ob-spread-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  background: #1a1a1a;
+  border-top: 1px solid #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.ob-cur-price {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e0e0e0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ob-cur-price.up { color: #ef5350; }
+.ob-cur-price.down { color: #42a5f5; }
+
+.ob-cur-change {
+  font-size: 0.72rem;
+  font-weight: 400;
+  margin-left: 0.2rem;
+}
+
+/* ===== 주문폼 (우측) ===== */
+.order-view {
+  flex: 1;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  min-width: 0;
 }
 
 /* 매수/매도 탭 */
@@ -17,8 +175,8 @@
 
 .side-btn {
   flex: 1;
-  padding: 0.7rem;
-  font-size: 1rem;
+  padding: 0.6rem;
+  font-size: 0.95rem;
   font-weight: 600;
   border: none;
   background: #1a1a1a;
@@ -28,7 +186,7 @@
 }
 
 .side-btn.buy-btn.active {
-  background: #e53935;
+  background: #c62828;
   color: #fff;
 }
 
@@ -50,7 +208,7 @@
 }
 
 .order-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #888;
   font-weight: 500;
   text-transform: uppercase;
@@ -60,12 +218,12 @@
 /* 인풋 */
 .order-input {
   width: 100%;
-  padding: 0.6rem 0.75rem;
+  padding: 0.5rem 0.6rem;
   background: #1e1e1e;
   border: 1px solid #333;
   border-radius: 6px;
   color: #f0f0f0;
-  font-size: 1rem;
+  font-size: 0.9rem;
   box-sizing: border-box;
 }
 
@@ -82,7 +240,7 @@
 .price-input-wrap {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .price-input-wrap .order-input {
@@ -91,12 +249,12 @@
 
 .input-unit {
   color: #888;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   white-space: nowrap;
 }
 
 .price-hint {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #888;
 }
 
@@ -118,7 +276,7 @@
   border: 1px solid #333;
   border-radius: 6px;
   z-index: 100;
-  max-height: 240px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
@@ -126,7 +284,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.55rem 0.75rem;
+  padding: 0.45rem 0.6rem;
   cursor: pointer;
   border-bottom: 1px solid #2a2a2a;
 }
@@ -140,12 +298,12 @@
 }
 
 .search-name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #e0e0e0;
 }
 
 .search-code {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #666;
 }
 
@@ -153,27 +311,27 @@
 .selected-stock {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
   background: #1e1e1e;
   border-radius: 6px;
   border: 1px solid #2a2a2a;
 }
 
 .selected-name {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: #e0e0e0;
   font-weight: 500;
 }
 
 .selected-code {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #666;
 }
 
 .selected-price {
   margin-left: auto;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: #e0e0e0;
 }
@@ -182,32 +340,32 @@
 .selected-price.down { color: #42a5f5; }
 
 .price-change-sm {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 400;
-  margin-left: 0.25rem;
+  margin-left: 0.2rem;
 }
 
 .price-loading-sm {
   margin-left: auto;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #666;
 }
 
 /* 주문 유형 */
 .order-type-group {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .order-type-btn {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.4rem;
   background: #1e1e1e;
   border: 1px solid #333;
   border-radius: 6px;
   color: #888;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.15s;
 }
 
@@ -220,18 +378,18 @@
 /* 수량 빠른 버튼 */
 .qty-quick {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.3rem;
   margin-top: 0.2rem;
 }
 
 .qty-btn {
   flex: 1;
-  padding: 0.35rem 0;
+  padding: 0.3rem 0;
   background: #1e1e1e;
   border: 1px solid #333;
   border-radius: 5px;
   color: #aaa;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -245,19 +403,19 @@
 .holdings-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .holding-chip {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.25rem;
   align-items: center;
-  padding: 0.35rem 0.6rem;
+  padding: 0.28rem 0.5rem;
   background: #1e1e1e;
   border: 1px solid #333;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #bbb;
   transition: all 0.15s;
 }
@@ -275,53 +433,53 @@
 
 .holding-qty {
   color: #666;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
 
 /* 총 주문금액 */
 .order-total {
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.6rem;
   background: #1a1a1a;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #aaa;
 }
 
 .order-total strong {
   color: #e0e0e0;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 /* 결과/오류 */
 .order-result {
-  padding: 0.6rem 0.75rem;
+  padding: 0.5rem 0.6rem;
   background: #1b2e1b;
   border: 1px solid #2e5c2e;
   border-radius: 6px;
   color: #81c784;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .order-error {
-  padding: 0.6rem 0.75rem;
+  padding: 0.5rem 0.6rem;
   background: #2e1b1b;
   border: 1px solid #5c2e2e;
   border-radius: 6px;
   color: #ef9a9a;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 /* 주문 버튼 */
 .order-submit-btn {
   width: 100%;
-  padding: 0.85rem;
+  padding: 0.75rem;
   border: none;
   border-radius: 8px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s;
-  margin-top: 0.25rem;
+  margin-top: auto;
 }
 
 .order-submit-btn:disabled {
