@@ -6,9 +6,39 @@ import {
   getGoogleRedirectResult,
   loadWatchList,
   loadWatchNames,
+  loadStocks,
+  loadPrices,
   type User,
+  type StockInfo,
+  type StockPrice,
 } from './firebase'
 import './App.css'
+
+interface StockRow {
+  code: string
+  nameKr: string
+  price: string
+  priceChange: string
+  priceChangeRate: string
+}
+
+function formatPrice(p: string): string {
+  const n = parseInt(p, 10)
+  if (isNaN(n)) return p
+  return n.toLocaleString()
+}
+
+function formatChange(change: string, rate: string): { text: string; cls: string } {
+  const n = parseFloat(change)
+  if (isNaN(n)) return { text: '-', cls: '' }
+  const sign = n > 0 ? '+' : ''
+  const rateN = parseFloat(rate)
+  const rateStr = isNaN(rateN) ? '' : ` (${sign}${rateN.toFixed(2)}%)`
+  return {
+    text: `${sign}${parseInt(change, 10).toLocaleString()}${rateStr}`,
+    cls: n > 0 ? 'up' : n < 0 ? 'down' : '',
+  }
+}
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -16,13 +46,13 @@ function App() {
   const [dataLoading, setDataLoading] = useState(false)
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
+  const [stocks, setStocks] = useState<Map<string, StockInfo>>(new Map())
+  const [prices, setPrices] = useState<Map<string, StockPrice>>(new Map())
   const [activeGroup, setActiveGroup] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getGoogleRedirectResult().catch((e) => {
-      console.error('redirect result error:', e)
-    })
+    getGoogleRedirectResult().catch((e) => console.error('redirect result error:', e))
 
     const unsubscribe = onAuthChanged(async (u) => {
       setUser(u)
@@ -31,14 +61,18 @@ function App() {
         setDataLoading(true)
         setError(null)
         try {
-          const [list, names] = await Promise.all([
+          const [list, names, stockMap, priceMap] = await Promise.all([
             loadWatchList(u.uid),
             loadWatchNames(u.uid),
+            loadStocks(),
+            loadPrices(),
           ])
           setWatchList(list)
           setWatchNames(names)
+          setStocks(stockMap)
+          setPrices(priceMap)
         } catch (e) {
-          console.error('watch data load failed:', e)
+          console.error('data load failed:', e)
           setError('데이터를 불러오는 데 실패했습니다.')
         } finally {
           setDataLoading(false)
@@ -47,6 +81,17 @@ function App() {
     })
     return unsubscribe
   }, [])
+
+  const buildRows = (codes: string[]): StockRow[] =>
+    codes.map((code) => {
+      const info = stocks.get(code)
+      const price = prices.get(code)
+      const nameKr = info?.nameKr ?? code
+      const currentPrice = price?.price ?? info?.prevPrice ?? '-'
+      const priceChange = price?.priceChange ?? '0'
+      const priceChangeRate = price?.priceChangeRate ?? '0'
+      return { code, nameKr, price: currentPrice, priceChange, priceChangeRate }
+    })
 
   if (loading) return <div className="container center">로딩 중...</div>
 
@@ -67,10 +112,10 @@ function App() {
             </div>
           </header>
 
-          {error && <div className="error">{error}</div>}
+          {error && <div className="error-msg">{error}</div>}
 
           {dataLoading ? (
-            <div className="center">즐겨찾기 불러오는 중...</div>
+            <div className="center-text">데이터 불러오는 중...</div>
           ) : (
             <>
               <div className="group-tabs">
@@ -85,13 +130,26 @@ function App() {
                 ))}
               </div>
 
-              <div className="stock-list">
+              <div className="stock-table">
+                <div className="stock-header">
+                  <span className="col-name">종목명</span>
+                  <span className="col-price">현재가</span>
+                  <span className="col-change">등락</span>
+                </div>
                 {(watchList[activeGroup]?.length ?? 0) > 0 ? (
-                  watchList[activeGroup].map((code) => (
-                    <div key={code} className="stock-item">
-                      {code}
-                    </div>
-                  ))
+                  buildRows(watchList[activeGroup]).map((row) => {
+                    const { text, cls } = formatChange(row.priceChange, row.priceChangeRate)
+                    return (
+                      <div key={row.code} className="stock-row">
+                        <span className="col-name">
+                          <span className="stock-name">{row.nameKr}</span>
+                          <span className="stock-code">{row.code}</span>
+                        </span>
+                        <span className={`col-price ${cls}`}>{formatPrice(row.price)}</span>
+                        <span className={`col-change ${cls}`}>{text}</span>
+                      </div>
+                    )
+                  })
                 ) : (
                   <p className="empty">이 그룹에 종목이 없습니다.</p>
                 )}
@@ -102,8 +160,11 @@ function App() {
       ) : (
         <div className="login">
           <h1>참교육 K</h1>
-          {error && <div className="error">{error}</div>}
-          <button className="btn btn-google" onClick={() => signInWithGoogle().catch(e => setError(e.message))}>
+          {error && <div className="error-msg">{error}</div>}
+          <button
+            className="btn btn-google"
+            onClick={() => signInWithGoogle().catch((e) => setError(e.message))}
+          >
             <svg viewBox="0 0 24 24" width="20" height="20">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

@@ -65,16 +65,12 @@ export async function loadWatchList(uid: string): Promise<string[][]> {
   const val = snapshot.val()
   if (!val) return Array(MAX_GROUP_SIZE).fill([])
 
-  // Array 형식
   if (Array.isArray(val)) {
     return val.map((g) => (Array.isArray(g) ? g : []))
   }
-
-  // Map 형식 (이전 버전 호환)
   if (typeof val === 'object') {
     return Array.from({ length: MAX_GROUP_SIZE }, (_, i) => val[String(i)] ?? [])
   }
-
   return Array(MAX_GROUP_SIZE).fill([])
 }
 
@@ -84,4 +80,44 @@ export async function loadWatchNames(uid: string): Promise<(string | null)[]> {
   const val = snapshot.val()
   if (!val || typeof val !== 'object') return Array(MAX_GROUP_SIZE).fill(null)
   return Array.from({ length: MAX_GROUP_SIZE }, (_, i) => val[String(i)] ?? null)
+}
+
+export interface StockInfo {
+  nameKr: string
+  prevPrice: string
+  [key: string]: unknown
+}
+
+export interface StockPrice {
+  price: string
+  priceChange: string
+  priceChangeRate: string
+}
+
+// stocks/kospi + stocks/kosdaq → Map<code, StockInfo>
+export async function loadStocks(): Promise<Map<string, StockInfo>> {
+  const snapshot = await get(ref(db, 'stocks'))
+  const val = snapshot.val()
+  if (!val) return new Map()
+
+  const result = new Map<string, StockInfo>()
+  for (const market of ['kospi', 'kosdaq']) {
+    const items = val[market] ?? {}
+    for (const [code, info] of Object.entries(items)) {
+      result.set(code.trim(), info as StockInfo)
+    }
+  }
+  return result
+}
+
+// spac/price → Map<code, StockPrice> (SPAC 종목 실시간 가격)
+export async function loadPrices(): Promise<Map<string, StockPrice>> {
+  const snapshot = await get(ref(db, 'spac/price'))
+  const val = snapshot.val()
+  if (!val) return new Map()
+  const result = new Map<string, StockPrice>()
+  for (const [code, info] of Object.entries(val)) {
+    result.set(code.trim(), info as StockPrice)
+  }
+  return result
 }

@@ -21,14 +21,10 @@ body {
   color: #666;
 }
 
-.error {
-  background: #fff3f3;
-  color: #c62828;
-  border: 1px solid #ffcdd2;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+.center-text {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
 }
 
 /* 로그인 화면 */
@@ -38,17 +34,17 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  gap: 1.5rem;
 }
 
 .login h1 {
   font-size: 2.5rem;
-  margin-bottom: 2rem;
   color: #333;
 }
 
 /* 메인 화면 */
 .main {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -99,9 +95,7 @@ body {
   transition: all 0.2s;
 }
 
-.tab:hover {
-  background: #f0f0f0;
-}
+.tab:hover { background: #f0f0f0; }
 
 .tab.active {
   background: #1976d2;
@@ -109,23 +103,78 @@ body {
   border-color: #1976d2;
 }
 
-/* 종목 리스트 */
-.stock-list {
+/* 종목 테이블 */
+.stock-table {
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   overflow: hidden;
 }
 
-.stock-item {
-  padding: 14px 16px;
+.stock-header {
+  display: flex;
+  padding: 10px 16px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee;
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 600;
+}
+
+.stock-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
-  font-size: 1rem;
+}
+
+.stock-row:last-child { border-bottom: none; }
+
+.col-name {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stock-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.stock-code {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.col-price {
+  width: 100px;
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #333;
 }
 
-.stock-item:last-child {
-  border-bottom: none;
+.col-change {
+  width: 130px;
+  text-align: right;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.up { color: #e53935; }
+.down { color: #1565c0; }
+
+/* 에러 */
+.error-msg {
+  background: #fff3f3;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
 }
 
 .empty {
@@ -148,9 +197,7 @@ body {
   transition: opacity 0.2s;
 }
 
-.btn:hover {
-  opacity: 0.85;
-}
+.btn:hover { opacity: 0.85; }
 
 .btn-google {
   background: white;
