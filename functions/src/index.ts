@@ -32,11 +32,48 @@ export const kisToken = onRequest(
           appsecret,
         }),
       });
-
       const data = await response.json();
       res.status(response.status).json(data);
     } catch (e) {
       console.error("kisToken error:", e);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// KIS 현재가 조회 프록시
+export const kisPrice = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "GET") {
+      res.status(405).send("Method Not Allowed");
+      return;
+    }
+
+    const { code, token, appkey, appsecret } = req.query as Record<string, string>;
+
+    if (!code || !token || !appkey || !appsecret) {
+      res.status(400).json({ error: "code, token, appkey, appsecret are required" });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            appkey,
+            appsecret,
+            tr_id: "FHKST01010100",
+            custtype: "P",
+          },
+        }
+      );
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      console.error("kisPrice error:", e);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

@@ -1,6 +1,6 @@
 import { loadKisConfig } from './KisSettings'
 
-const KIS_BASE = 'https://openapi.koreainvestment.com:9443'
+const KIS_PRICE_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisPrice'
 const KIS_TOKEN_PROXY = 'https://kistoken-ncgnzcdzqa-du.a.run.app'
 const TOKEN_STORAGE_KEY = 'kis_token'
 
@@ -63,22 +63,22 @@ export interface KisPrice {
 
 export async function fetchPrice(code: string, token: string): Promise<KisPrice | null> {
   const config = loadKisConfig()
-  const res = await fetch(
-    `${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        appkey: config.appKey,
-        appsecret: config.appSecret,
-        tr_id: 'FHKST01010100',
-        custtype: 'P',
-      },
-    }
-  )
-  if (!res.ok) return null
+  const params = new URLSearchParams({
+    code,
+    token,
+    appkey: config.appKey,
+    appsecret: config.appSecret,
+  })
+  const res = await fetch(`${KIS_PRICE_PROXY}?${params}`)
+  if (!res.ok) {
+    console.error(`fetchPrice ${code} HTTP ${res.status}`)
+    return null
+  }
   const data = await res.json()
-  if (data.rt_cd !== '0') return null
+  if (data.rt_cd !== '0') {
+    console.error(`fetchPrice ${code} rt_cd=${data.rt_cd} msg=${data.msg1}`)
+    return null
+  }
   const o = data.output
   return {
     price: o.stck_prpr,
