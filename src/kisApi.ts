@@ -25,7 +25,7 @@ function saveTokenCache(token: string, expiresInSec: number) {
   localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(cache))
 }
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   // 캐시된 토큰이 유효하면 재사용
   const cache = loadTokenCache()
   if (cache && Date.now() < cache.expiresAt) {

@@ -68,6 +68,37 @@ export const kisApprovalKey = onRequest(
   }
 );
 
+// KIS 주식잔고 조회 프록시 (TTTC8434R)
+export const kisBalance = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "GET") { res.status(405).send("Method Not Allowed"); return; }
+    const { token, appkey, appsecret, accountNo, fk100 = "", nk100 = "" } =
+      req.query as Record<string, string>;
+    if (!token || !appkey || !appsecret || !accountNo) {
+      res.status(400).json({ error: "token, appkey, appsecret, accountNo required" }); return;
+    }
+    const cano = accountNo.replace("-", "").slice(0, 8);
+    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    try {
+      const params = new URLSearchParams({
+        CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
+        AFHR_FLPR_YN: "N", OFL_YN: "", INQR_DVSN: "02", UNPR_DVSN: "01",
+        FUND_STTL_ICLD_YN: "N", FNCG_AMT_AUTO_RDPT_YN: "N", PRCS_DVSN: "00",
+        CTX_AREA_FK100: fk100, CTX_AREA_NK100: nk100,
+      });
+      const response = await fetch(
+        `${KIS_BASE}/uapi/domestic-stock/v1/trading/inquire-balance?${params}`,
+        { headers: { Authorization: `Bearer ${token}`, appkey, appsecret, tr_id: "TTTC8434R" } }
+      );
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // KIS 현재가 조회 프록시
 export const kisPrice = onRequest(
   { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
