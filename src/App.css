@@ -10,14 +10,16 @@ body {
 }
 
 .container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
 }
 
+/* 로그인 화면 */
 .login {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .login h1 {
@@ -26,42 +28,104 @@ body {
   color: #333;
 }
 
-.profile {
-  text-align: center;
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+/* 메인 화면 */
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
-.avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #ddd;
   margin-bottom: 1rem;
 }
 
-.name {
-  font-size: 1.2rem;
-  font-weight: 600;
+.header h1 {
+  font-size: 1.5rem;
   color: #333;
-  margin-bottom: 0.25rem;
 }
 
-.email {
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 1.5rem;
+  color: #555;
 }
 
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+/* 그룹 탭 */
+.group-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: #f0f0f0;
+}
+
+.tab.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+/* 종목 리스트 */
+.stock-list {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.stock-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.stock-item:last-child {
+  border-bottom: none;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+/* 버튼 */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -75,9 +139,13 @@ body {
   color: #333;
   border: 1px solid #ddd;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  font-size: 1rem;
+  padding: 12px 24px;
 }
 
 .btn-signout {
   background: #f44336;
   color: white;
+  padding: 6px 14px;
+  font-size: 0.85rem;
 }

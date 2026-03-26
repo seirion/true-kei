@@ -1,15 +1,33 @@
 import { useEffect, useState } from 'react'
-import { signInWithGoogle, signOutUser, onAuthChanged, type User } from './firebase'
+import {
+  signInWithGoogle,
+  signOutUser,
+  onAuthChanged,
+  loadWatchList,
+  loadWatchNames,
+  type User,
+} from './firebase'
 import './App.css'
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [watchList, setWatchList] = useState<string[][]>([])
+  const [watchNames, setWatchNames] = useState<(string | null)[]>([])
+  const [activeGroup, setActiveGroup] = useState(0)
 
   useEffect(() => {
-    const unsubscribe = onAuthChanged((u) => {
+    const unsubscribe = onAuthChanged(async (u) => {
       setUser(u)
       setLoading(false)
+      if (u) {
+        const [list, names] = await Promise.all([
+          loadWatchList(u.uid),
+          loadWatchNames(u.uid),
+        ])
+        setWatchList(list)
+        setWatchNames(names)
+      }
     })
     return unsubscribe
   }, [])
@@ -19,15 +37,43 @@ function App() {
   return (
     <div className="container">
       {user ? (
-        <div className="profile">
-          {user.photoURL && (
-            <img src={user.photoURL} alt="profile" className="avatar" />
-          )}
-          <p className="name">{user.displayName}</p>
-          <p className="email">{user.email}</p>
-          <button className="btn btn-signout" onClick={signOutUser}>
-            로그아웃
-          </button>
+        <div className="main">
+          <header className="header">
+            <h1>참교육 K</h1>
+            <div className="user-info">
+              {user.photoURL && (
+                <img src={user.photoURL} alt="profile" className="avatar-sm" />
+              )}
+              <span>{user.displayName}</span>
+              <button className="btn btn-signout" onClick={signOutUser}>
+                로그아웃
+              </button>
+            </div>
+          </header>
+
+          <div className="group-tabs">
+            {Array.from({ length: 10 }, (_, i) => (
+              <button
+                key={i}
+                className={`tab ${activeGroup === i ? 'active' : ''}`}
+                onClick={() => setActiveGroup(i)}
+              >
+                {watchNames[i] || `그룹 ${i}`}
+              </button>
+            ))}
+          </div>
+
+          <div className="stock-list">
+            {watchList[activeGroup]?.length > 0 ? (
+              watchList[activeGroup].map((code) => (
+                <div key={code} className="stock-item">
+                  {code}
+                </div>
+              ))
+            ) : (
+              <p className="empty">이 그룹에 종목이 없습니다.</p>
+            )}
+          </div>
         </div>
       ) : (
         <div className="login">
