@@ -11,6 +11,7 @@ import {
   type StockInfo,
 } from './firebase'
 import { KisSettingsModal, loadKisConfig } from './KisSettings'
+import { SearchModal } from './SearchModal'
 import { fetchPrices, type KisPrice } from './kisApi'
 import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade } from './kisWebSocket'
 import './App.css'
@@ -64,6 +65,8 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [showKisSettings, setShowKisSettings] = useState(false)
   const closeKisSettings = useCallback(() => setShowKisSettings(false), [])
+  const [showSearch, setShowSearch] = useState(false)
+  const closeSearch = useCallback(() => setShowSearch(false), [])
   const [wsConnected, setWsConnected] = useState(false)
 
   // refs — 렌더링 없이 최신값 유지
@@ -225,6 +228,7 @@ function App() {
               <span className={`ws-badge ${wsConnected ? 'ws-on' : 'ws-off'}`} title={wsConnected ? '실시간 연결됨' : '실시간 연결 끊김'}>
                 {wsConnected ? '● 실시간' : '○ 대기'}
               </span>
+              <button className="btn btn-icon" onClick={() => setShowSearch(true)} title="종목 검색">🔍</button>
               <button className="btn btn-icon" onClick={() => setShowKisSettings(true)} title="KIS API 설정">⚙️</button>
 
               <button className="btn btn-signout" onClick={signOutUser}>로그아웃</button>
@@ -232,6 +236,7 @@ function App() {
           </header>
 
           {showKisSettings && <KisSettingsModal onClose={closeKisSettings} />}
+          {showSearch && <SearchModal stocks={stocks} onClose={closeSearch} />}
           {error && <div className="error-msg">{error}</div>}
 
           {dataLoading ? (
