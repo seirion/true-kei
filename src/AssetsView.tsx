@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchBalance, type AssetItem, type AccountSummary } from './kisBalance'
+import { fetchPrices, type KisPrice } from './kisApi'
 import './AssetsView.css'
 
 function fmt(n: number): string {
@@ -28,6 +29,7 @@ export function AssetsView() {
   const [loading, setLoading] = useState(false)
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [summary, setSummary] = useState<AccountSummary | null>(null)
+  const [livePrices, setLivePrices] = useState<Map<string, KisPrice>>(new Map())
   const [error, setError] = useState<string | null>(null)
   const [showDaily, setShowDaily] = useState(false)
 
@@ -38,6 +40,14 @@ export function AssetsView() {
       const result = await fetchBalance()
       setAssets(result.assets)
       setSummary(result.summary)
+      // 보유 종목 현재가 조회 (전일 대비 계산용)
+      const codes = result.assets.map(a => a.code)
+      if (codes.length > 0) {
+        const priceMap = new Map<string, KisPrice>()
+        await fetchPrices(codes, (code, price) => {
+          if (price) { priceMap.set(code, price); setLivePrices(new Map(priceMap)) }
+        })
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '잔고 조회 실패')
     } finally {
@@ -126,16 +136,26 @@ export function AssetsView() {
                 </div>
               </div>
               {/* 줄 3: 평가금액 + 손익 */}
-              <div className="asset-row3">
-                <div>
-                  <span className="asset-eval-label">평가금액 </span>
-                  <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
-                </div>
-                {showDaily
-                  ? <ProfitBadge value={item.dailyProfitLoss} rate={item.priceChangeRate} label="일간" />
-                  : <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
-                }
-              </div>
+              {(() => {
+                const live = livePrices.get(item.code)
+                const dailyChange = live
+                  ? parseInt(live.priceChange, 10) * (live.priceChangeSign === '4' || live.priceChangeSign === '5' ? -1 : 1)
+                  : item.priceChange
+                const dailyRate = live ? parseFloat(live.priceChangeRate) * (live.priceChangeSign === '4' || live.priceChangeSign === '5' ? -1 : 1) : item.priceChangeRate
+                const dailyPnl = dailyChange * item.holdingQty
+                return (
+                  <div className="asset-row3">
+                    <div>
+                      <span className="asset-eval-label">평가금액 </span>
+                      <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
+                    </div>
+                    {showDaily
+                      ? <ProfitBadge value={dailyPnl} rate={dailyRate} label="일간" />
+                      : <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
+                    }
+                  </div>
+                )
+              })()}
             </div>
           ))}
         </div>
