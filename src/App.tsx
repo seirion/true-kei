@@ -13,12 +13,13 @@ import './App.css'
 function App() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(false)
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
   const [activeGroup, setActiveGroup] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // 리디렉트 로그인 결과 처리
     getGoogleRedirectResult().catch((e) => {
       console.error('redirect result error:', e)
     })
@@ -27,18 +28,27 @@ function App() {
       setUser(u)
       setLoading(false)
       if (u) {
-        const [list, names] = await Promise.all([
-          loadWatchList(u.uid),
-          loadWatchNames(u.uid),
-        ])
-        setWatchList(list)
-        setWatchNames(names)
+        setDataLoading(true)
+        setError(null)
+        try {
+          const [list, names] = await Promise.all([
+            loadWatchList(u.uid),
+            loadWatchNames(u.uid),
+          ])
+          setWatchList(list)
+          setWatchNames(names)
+        } catch (e) {
+          console.error('watch data load failed:', e)
+          setError('데이터를 불러오는 데 실패했습니다.')
+        } finally {
+          setDataLoading(false)
+        }
       }
     })
     return unsubscribe
   }, [])
 
-  if (loading) return <div className="container">로딩 중...</div>
+  if (loading) return <div className="container center">로딩 중...</div>
 
   return (
     <div className="container">
@@ -57,29 +67,37 @@ function App() {
             </div>
           </header>
 
-          <div className="group-tabs">
-            {Array.from({ length: 10 }, (_, i) => (
-              <button
-                key={i}
-                className={`tab ${activeGroup === i ? 'active' : ''}`}
-                onClick={() => setActiveGroup(i)}
-              >
-                {watchNames[i] || `그룹 ${i}`}
-              </button>
-            ))}
-          </div>
+          {error && <div className="error">{error}</div>}
 
-          <div className="stock-list">
-            {watchList[activeGroup]?.length > 0 ? (
-              watchList[activeGroup].map((code) => (
-                <div key={code} className="stock-item">
-                  {code}
-                </div>
-              ))
-            ) : (
-              <p className="empty">이 그룹에 종목이 없습니다.</p>
-            )}
-          </div>
+          {dataLoading ? (
+            <div className="center">즐겨찾기 불러오는 중...</div>
+          ) : (
+            <>
+              <div className="group-tabs">
+                {Array.from({ length: 10 }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`tab ${activeGroup === i ? 'active' : ''}`}
+                    onClick={() => setActiveGroup(i)}
+                  >
+                    {watchNames[i] || `그룹 ${i}`}
+                  </button>
+                ))}
+              </div>
+
+              <div className="stock-list">
+                {(watchList[activeGroup]?.length ?? 0) > 0 ? (
+                  watchList[activeGroup].map((code) => (
+                    <div key={code} className="stock-item">
+                      {code}
+                    </div>
+                  ))
+                ) : (
+                  <p className="empty">이 그룹에 종목이 없습니다.</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="login">

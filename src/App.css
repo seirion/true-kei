@@ -13,6 +13,24 @@ body {
   min-height: 100vh;
 }
 
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #666;
+}
+
+.error {
+  background: #fff3f3;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
 /* 로그인 화면 */
 .login {
   display: flex;
