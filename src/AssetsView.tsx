@@ -95,9 +95,10 @@ export function AssetsView() {
               {showDaily ? (
                 <SummaryProfitValue value={assets.reduce((sum, item) => {
                   const live = livePrices.get(item.code)
-                  const signMul = (s?: string) => (s === '4' || s === '5') ? -1 : 1
+                  const toSigned2 = (abs: number, sign?: string) =>
+                    (sign === '4' || sign === '5') ? -abs : abs
                   const dailyChange = live
-                    ? parseInt(live.priceChange, 10) * signMul(live.priceChangeSign)
+                    ? toSigned2(parseInt(live.priceChange, 10), live.priceChangeSign)
                     : item.priceChange
                   return sum + dailyChange * item.holdingQty
                 }, 0)} />
@@ -151,12 +152,15 @@ export function AssetsView() {
                 // 일간 손익: (현재가 - 전일종가) × 수량
                 // live.priceChange 는 절댓값, sign으로 방향 결정
                 const live = livePrices.get(item.code)
-                const signMul = (s?: string) => (s === '4' || s === '5') ? -1 : 1
+                // priceChange는 절댓값, sign으로 방향 결정
+                // sign: 1=상한 2=상승 3=보합 4=하한 5=하락
+                const toSigned = (abs: number, sign?: string) =>
+                  (sign === '4' || sign === '5') ? -abs : abs
                 const dailyChange = live
-                  ? parseInt(live.priceChange, 10) * signMul(live.priceChangeSign)
-                  : item.priceChange  // 잔고 API bfdy_cprs_icdc (장중엔 있음)
+                  ? toSigned(parseInt(live.priceChange, 10), live.priceChangeSign)
+                  : item.priceChange
                 const dailyRate = live
-                  ? parseFloat(live.priceChangeRate) * signMul(live.priceChangeSign)
+                  ? toSigned(parseFloat(live.priceChangeRate), live.priceChangeSign)
                   : item.priceChangeRate
                 const dailyPnl = dailyChange * item.holdingQty
                 return (
