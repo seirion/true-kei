@@ -226,9 +226,7 @@ function App() {
                 {wsConnected ? '● 실시간' : '○ 대기'}
               </span>
               <button className="btn btn-icon" onClick={() => setShowKisSettings(true)} title="KIS API 설정">⚙️</button>
-              {!priceLoading && currentCodes.length > 0 && (
-                <button className="btn btn-refresh" onClick={() => loadGroupPrices(currentCodes)} title="현재가 새로고침">🔄</button>
-              )}
+
               <button className="btn btn-signout" onClick={signOutUser}>로그아웃</button>
             </div>
           </header>
