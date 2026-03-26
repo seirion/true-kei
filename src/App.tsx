@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   signInWithGoogle,
   signOutUser,
@@ -12,6 +12,7 @@ import {
 } from './firebase'
 import { KisSettingsModal, loadKisConfig } from './KisSettings'
 import { fetchPrices, type KisPrice } from './kisApi'
+import { KisWebSocket, fetchWsApprovalKey, type RealTimeTrade } from './kisWebSocket'
 import './App.css'
 
 interface StockRow {
@@ -57,6 +58,8 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [showKisSettings, setShowKisSettings] = useState(false)
   const closeKisSettings = useCallback(() => setShowKisSettings(false), [])
+  const [wsConnected, setWsConnected] = useState(false)
+  const kisWsRef = useRef<KisWebSocket | null>(null)
 
   useEffect(() => {
     getGoogleRedirectResult().catch((e) => console.error('redirect result error:', e))
@@ -77,12 +80,13 @@ function App() {
           setWatchNames(names)
           setStocks(stockMap)
 
-          // KIS 설정이 있으면 자동으로 전체 현재가 조회
+          // KIS 설정이 있으면 현재가 1회 조회 후 WebSocket 실시간 연결
           const cfg = loadKisConfig()
           if (cfg.appKey && cfg.appSecret) {
             const allCodes = [...new Set(list.flat().filter(Boolean))]
             if (allCodes.length > 0) {
               loadAllPrices(allCodes)
+              initWebSocket(cfg.appKey, cfg.appSecret, allCodes)
             }
           }
         } catch (e) {
@@ -93,8 +97,39 @@ function App() {
         }
       }
     })
-    return unsubscribe
+    return () => {
+      unsubscribe()
+      kisWsRef.current?.disconnect()
+    }
   }, [])
+
+  const initWebSocket = async (appKey: string, appSecret: string, codes: string[]) => {
+    try {
+      const approvalKey = await fetchWsApprovalKey(appKey, appSecret)
+      const kisWs = new KisWebSocket(
+        approvalKey,
+        (trade: RealTimeTrade) => {
+          setPrices(prev => {
+            const next = new Map(prev)
+            const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
+            next.set(trade.code, {
+              price: String(trade.price),
+              priceChange: String(Math.abs(trade.delta)),
+              priceChangeSign: sign,
+              priceChangeRate: String(Math.abs(trade.rate)),
+            })
+            return next
+          })
+        },
+        setWsConnected
+      )
+      kisWsRef.current = kisWs
+      kisWs.connect()
+      kisWs.subscribe(codes)
+    } catch (e) {
+      console.error('WebSocket init failed:', e)
+    }
+  }
 
   const loadAllPrices = async (codes: string[]) => {
     setPriceLoading(true)
@@ -145,6 +180,9 @@ function App() {
                 <img src={user.photoURL} alt="profile" className="avatar-sm" />
               )}
               <span>{user.displayName}</span>
+              <span className={`ws-badge ${wsConnected ? 'ws-on' : 'ws-off'}`} title={wsConnected ? '실시간 연결됨' : '실시간 연결 끊김'}>
+                {wsConnected ? '● 실시간' : '○ 대기'}
+              </span>
               <button
                 className="btn btn-icon"
                 onClick={() => setShowKisSettings(true)}

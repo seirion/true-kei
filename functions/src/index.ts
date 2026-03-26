@@ -41,6 +41,33 @@ export const kisToken = onRequest(
   }
 );
 
+// KIS WebSocket Approval Key 발급 프록시
+export const kisApprovalKey = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
+      return;
+    }
+    const { appkey, appsecret } = req.body as { appkey?: string; appsecret?: string };
+    if (!appkey || !appsecret) {
+      res.status(400).json({ error: "appkey and appsecret are required" });
+      return;
+    }
+    try {
+      const response = await fetch(`${KIS_BASE}/oauth2/Approval`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grant_type: "client_credentials", appkey, secretkey: appsecret }),
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // KIS 현재가 조회 프록시
 export const kisPrice = onRequest(
   { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
