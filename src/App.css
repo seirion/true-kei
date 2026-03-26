@@ -225,3 +225,21 @@ body {
 }
 
 .btn-icon:hover { background: #f0f0f0; }
+
+.btn-refresh {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.btn-refresh:hover { background: #f0f0f0; }
+
+.price-loading {
+  font-size: 0.82rem;
+  color: #888;
+  padding: 6px 0 8px;
+  text-align: center;
+}

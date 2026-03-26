@@ -10,7 +10,8 @@ import {
   type User,
   type StockInfo,
 } from './firebase'
-import { KisSettingsModal } from './KisSettings'
+import { KisSettingsModal, loadKisConfig } from './KisSettings'
+import { fetchPrices, type KisPrice } from './kisApi'
 import './App.css'
 
 interface StockRow {
@@ -18,8 +19,9 @@ interface StockRow {
   nameKr: string
   price: string
   priceChange: string
+  priceChangeSign: string
   priceChangeRate: string
-  loading?: boolean
+  priceLoading: boolean
 }
 
 function formatPrice(p: string): string {
@@ -28,15 +30,17 @@ function formatPrice(p: string): string {
   return n.toLocaleString()
 }
 
-function formatChange(change: string, rate: string): { text: string; cls: string } {
+function formatChange(change: string, sign: string, rate: string): { text: string; cls: string } {
   const n = parseFloat(change)
-  if (isNaN(n)) return { text: '-', cls: '' }
-  const sign = n > 0 ? '+' : ''
+  if (isNaN(n) || n === 0) return { text: '0', cls: '' }
+  const isUp = sign === '1' || sign === '2'
+  const isDown = sign === '4' || sign === '5'
+  const prefix = isUp ? '+' : isDown ? '-' : ''
   const rateN = parseFloat(rate)
-  const rateStr = isNaN(rateN) ? '' : ` (${sign}${rateN.toFixed(2)}%)`
+  const rateStr = isNaN(rateN) ? '' : ` (${prefix}${Math.abs(rateN).toFixed(2)}%)`
   return {
-    text: `${sign}${parseInt(change, 10).toLocaleString()}${rateStr}`,
-    cls: n > 0 ? 'up' : n < 0 ? 'down' : '',
+    text: `${prefix}${Math.abs(n).toLocaleString()}${rateStr}`,
+    cls: isUp ? 'up' : isDown ? 'down' : '',
   }
 }
 
@@ -47,6 +51,8 @@ function App() {
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
   const [stocks, setStocks] = useState<Map<string, StockInfo>>(new Map())
+  const [prices, setPrices] = useState<Map<string, KisPrice>>(new Map())
+  const [priceLoading, setPriceLoading] = useState(false)
   const [activeGroup, setActiveGroup] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [showKisSettings, setShowKisSettings] = useState(false)
@@ -70,6 +76,15 @@ function App() {
           setWatchList(list)
           setWatchNames(names)
           setStocks(stockMap)
+
+          // KIS 설정이 있으면 자동으로 전체 현재가 조회
+          const cfg = loadKisConfig()
+          if (cfg.appKey && cfg.appSecret) {
+            const allCodes = [...new Set(list.flat().filter(Boolean))]
+            if (allCodes.length > 0) {
+              loadAllPrices(allCodes)
+            }
+          }
         } catch (e) {
           console.error('data load failed:', e)
           setError('데이터를 불러오는 데 실패했습니다.')
@@ -81,15 +96,43 @@ function App() {
     return unsubscribe
   }, [])
 
+  const loadAllPrices = async (codes: string[]) => {
+    setPriceLoading(true)
+    setError(null)
+    try {
+      const result = new Map<string, KisPrice>()
+      await fetchPrices(codes, (code, price) => {
+        if (price) {
+          result.set(code, price)
+          setPrices(new Map(result)) // 종목별로 점진적 업데이트
+        }
+      })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '현재가 조회 실패'
+      setError(msg)
+    } finally {
+      setPriceLoading(false)
+    }
+  }
+
   const buildRows = (codes: string[]): StockRow[] =>
     codes.map((code) => {
       const info = stocks.get(code)
-      const nameKr = info?.nameKr ?? code
-      const currentPrice = info?.prevPrice ?? '-'
-      return { code, nameKr, price: currentPrice, priceChange: '0', priceChangeRate: '0', loading: true }
+      const p = prices.get(code)
+      return {
+        code,
+        nameKr: info?.nameKr ?? code,
+        price: p?.price ?? info?.prevPrice ?? '-',
+        priceChange: p?.priceChange ?? '0',
+        priceChangeSign: p?.priceChangeSign ?? '3',
+        priceChangeRate: p?.priceChangeRate ?? '0',
+        priceLoading: !p && priceLoading,
+      }
     })
 
   if (loading) return <div className="container center">로딩 중...</div>
+
+  const allCodes = [...new Set(watchList.flat().filter(Boolean))]
 
   return (
     <div className="container">
@@ -109,6 +152,15 @@ function App() {
               >
                 ⚙️
               </button>
+              {!priceLoading && allCodes.length > 0 && (
+                <button
+                  className="btn btn-refresh"
+                  onClick={() => loadAllPrices(allCodes)}
+                  title="현재가 새로고침"
+                >
+                  🔄
+                </button>
+              )}
               <button className="btn btn-signout" onClick={signOutUser}>
                 로그아웃
               </button>
@@ -135,6 +187,12 @@ function App() {
                 ))}
               </div>
 
+              {priceLoading && (
+                <div className="price-loading">
+                  현재가 조회 중... ({prices.size}/{allCodes.length})
+                </div>
+              )}
+
               <div className="stock-table">
                 <div className="stock-header">
                   <span className="col-name">종목명</span>
@@ -143,15 +201,19 @@ function App() {
                 </div>
                 {(watchList[activeGroup]?.length ?? 0) > 0 ? (
                   buildRows(watchList[activeGroup]).map((row) => {
-                    const { text, cls } = formatChange(row.priceChange, row.priceChangeRate)
+                    const { text, cls } = formatChange(row.priceChange, row.priceChangeSign, row.priceChangeRate)
                     return (
                       <div key={row.code} className="stock-row">
                         <span className="col-name">
                           <span className="stock-name">{row.nameKr}</span>
                           <span className="stock-code">{row.code}</span>
                         </span>
-                        <span className={`col-price ${cls}`}>{formatPrice(row.price)}</span>
-                        <span className={`col-change ${cls}`}>{text}</span>
+                        <span className={`col-price ${cls}`}>
+                          {row.priceLoading ? '…' : formatPrice(row.price)}
+                        </span>
+                        <span className={`col-change ${cls}`}>
+                          {row.priceLoading ? '' : text}
+                        </span>
                       </div>
                     )
                   })

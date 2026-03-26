@@ -58,7 +58,7 @@ export function KisSettingsModal({ onClose }: Props) {
           <label>계좌번호</label>
           <input
             type="text"
-            placeholder="예) 64369441-01"
+            placeholder="예) 00000000-01"
             value={config.accountNo}
             onChange={set('accountNo')}
           />
