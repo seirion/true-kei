@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   signInWithGoogle,
   signOutUser,
@@ -10,6 +10,7 @@ import {
   type User,
   type StockInfo,
 } from './firebase'
+import { KisSettingsModal } from './KisSettings'
 import './App.css'
 
 interface StockRow {
@@ -48,6 +49,8 @@ function App() {
   const [stocks, setStocks] = useState<Map<string, StockInfo>>(new Map())
   const [activeGroup, setActiveGroup] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [showKisSettings, setShowKisSettings] = useState(false)
+  const closeKisSettings = useCallback(() => setShowKisSettings(false), [])
 
   useEffect(() => {
     getGoogleRedirectResult().catch((e) => console.error('redirect result error:', e))
@@ -99,11 +102,20 @@ function App() {
                 <img src={user.photoURL} alt="profile" className="avatar-sm" />
               )}
               <span>{user.displayName}</span>
+              <button
+                className="btn btn-icon"
+                onClick={() => setShowKisSettings(true)}
+                title="KIS API 설정"
+              >
+                ⚙️
+              </button>
               <button className="btn btn-signout" onClick={signOutUser}>
                 로그아웃
               </button>
             </div>
           </header>
+
+          {showKisSettings && <KisSettingsModal onClose={closeKisSettings} />}
 
           {error && <div className="error-msg">{error}</div>}
 
