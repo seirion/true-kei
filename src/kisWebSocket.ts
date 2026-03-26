@@ -92,6 +92,18 @@ export class KisWebSocket {
     })
   }
 
+  private getTrId(): string {
+    // NXT 운영 시간: 08:00~09:00, 15:30~20:00
+    const now = new Date()
+    const h = now.getHours()
+    const m = now.getMinutes()
+    const total = h * 60 + m
+    const isNxt =
+      (total >= 8 * 60 && total < 9 * 60) ||
+      (total >= 15 * 60 + 30 && total < 20 * 60)
+    return isNxt ? 'H0NXCNT0' : 'H0STCNT0'
+  }
+
   private sendSubscribe(code: string, subscribe: boolean) {
     const msg = JSON.stringify({
       header: {
@@ -102,7 +114,7 @@ export class KisWebSocket {
       },
       body: {
         input: {
-          tr_id: 'H0STCNT0', // 실시간 체결
+          tr_id: this.getTrId(),
           tr_key: code,
         },
       },
