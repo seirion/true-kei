@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app'
 import {
   getAuth,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
@@ -28,8 +29,18 @@ const provider = new GoogleAuthProvider()
 
 export { auth, provider }
 
-export function signInWithGoogle() {
-  return signInWithRedirect(auth, provider)
+export async function signInWithGoogle() {
+  try {
+    // 팝업 먼저 시도
+    return await signInWithPopup(auth, provider)
+  } catch (e: unknown) {
+    const code = (e as { code?: string })?.code
+    // 팝업 차단 등 팝업 불가 시 리디렉트로 폴백
+    if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
+      return signInWithRedirect(auth, provider)
+    }
+    throw e
+  }
 }
 
 export function getGoogleRedirectResult() {
