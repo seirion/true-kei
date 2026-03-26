@@ -148,19 +148,44 @@ body {
   color: #aaa;
 }
 
+.col-price-wrap {
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .col-price {
-  width: 100px;
   text-align: right;
   font-size: 0.95rem;
   font-weight: 600;
   color: #333;
 }
 
+.nxt-price {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #888;
+}
+
+.col-change-wrap {
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .col-change {
-  width: 130px;
   text-align: right;
   font-size: 0.85rem;
   color: #666;
+}
+
+.nxt-change {
+  font-size: 0.75rem;
+  color: #aaa;
 }
 
 .up { color: #e53935; }

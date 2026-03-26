@@ -8,6 +8,21 @@ export interface RealTimeTrade {
   delta: number   // 전일 대비 증감
   rate: number    // 전일 대비율(%)
   volume: number  // 누적 거래량
+  isNxt: boolean  // NXT 거래소 여부
+}
+
+// 현재 NXT 시간대 여부
+export function isNxtHour(): boolean {
+  const now = new Date()
+  const total = now.getHours() * 60 + now.getMinutes()
+  return (total >= 8 * 60 && total < 9 * 60) || (total >= 15 * 60 + 30 && total < 20 * 60)
+}
+
+// 정규장 시간대 여부 (09:00~15:30)
+export function isRegularHour(): boolean {
+  const now = new Date()
+  const total = now.getHours() * 60 + now.getMinutes()
+  return total >= 9 * 60 && total < 15 * 60 + 30
 }
 
 type TradeCallback = (trade: RealTimeTrade) => void
@@ -156,6 +171,7 @@ export class KisWebSocket {
       delta: parseFloat(fields[4]),
       rate: parseFloat(fields[5]),
       volume: parseFloat(fields[13] ?? '0'),
+      isNxt: trId === 'H0NXCNT0',
     }
     this.onTrade(trade)
   }

@@ -12,16 +12,21 @@ import {
 } from './firebase'
 import { KisSettingsModal, loadKisConfig } from './KisSettings'
 import { fetchPrices, type KisPrice } from './kisApi'
-import { KisWebSocket, fetchWsApprovalKey, type RealTimeTrade } from './kisWebSocket'
+import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade } from './kisWebSocket'
 import './App.css'
 
-interface StockRow {
-  code: string
-  nameKr: string
+interface PriceInfo {
   price: string
   priceChange: string
   priceChangeSign: string
   priceChangeRate: string
+}
+
+interface StockRow {
+  code: string
+  nameKr: string
+  krx: PriceInfo | null  // KRX 가격 (REST API)
+  nxt: PriceInfo | null  // NXT 가격 (WebSocket)
   priceLoading: boolean
 }
 
@@ -53,6 +58,7 @@ function App() {
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
   const [stocks, setStocks] = useState<Map<string, StockInfo>>(new Map())
   const [prices, setPrices] = useState<Map<string, KisPrice>>(new Map())
+  const [nxtPrices, setNxtPrices] = useState<Map<string, KisPrice>>(new Map())
   const [priceLoading, setPriceLoading] = useState(false)
   const [activeGroup, setActiveGroup] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -109,17 +115,18 @@ function App() {
       const kisWs = new KisWebSocket(
         approvalKey,
         (trade: RealTimeTrade) => {
-          setPrices(prev => {
-            const next = new Map(prev)
-            const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
-            next.set(trade.code, {
-              price: String(trade.price),
-              priceChange: String(Math.abs(trade.delta)),
-              priceChangeSign: sign,
-              priceChangeRate: String(Math.abs(trade.rate)),
-            })
-            return next
-          })
+          const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
+          const info: KisPrice = {
+            price: String(trade.price),
+            priceChange: String(Math.abs(trade.delta)),
+            priceChangeSign: sign,
+            priceChangeRate: String(Math.abs(trade.rate)),
+          }
+          if (trade.isNxt) {
+            setNxtPrices(prev => new Map(prev).set(trade.code, info))
+          } else {
+            setPrices(prev => new Map(prev).set(trade.code, info))
+          }
         },
         setWsConnected
       )
@@ -154,13 +161,23 @@ function App() {
     codes.map((code) => {
       const info = stocks.get(code)
       const p = prices.get(code)
+      const nxt = nxtPrices.get(code)
+
+      // KRX: REST API 결과 (없으면 prevPrice)
+      const krx: PriceInfo = p
+        ? { price: p.price, priceChange: p.priceChange, priceChangeSign: p.priceChangeSign, priceChangeRate: p.priceChangeRate }
+        : { price: info?.prevPrice ?? '-', priceChange: '0', priceChangeSign: '3', priceChangeRate: '0' }
+
+      // NXT: WebSocket 실시간 (NXT 시간대에만 표시)
+      const nxtInfo: PriceInfo | null = nxt
+        ? { price: nxt.price, priceChange: nxt.priceChange, priceChangeSign: nxt.priceChangeSign, priceChangeRate: nxt.priceChangeRate }
+        : null
+
       return {
         code,
         nameKr: info?.nameKr ?? code,
-        price: p?.price ?? info?.prevPrice ?? '-',
-        priceChange: p?.priceChange ?? '0',
-        priceChangeSign: p?.priceChangeSign ?? '3',
-        priceChangeRate: p?.priceChangeRate ?? '0',
+        krx,
+        nxt: nxtInfo,
         priceLoading: !p && priceLoading,
       }
     })
@@ -234,23 +251,39 @@ function App() {
               <div className="stock-table">
                 <div className="stock-header">
                   <span className="col-name">종목명</span>
-                  <span className="col-price">현재가</span>
-                  <span className="col-change">등락</span>
+                  <span className="col-price-wrap">현재가{!isRegularHour() && isNxtHour() ? ' / 시외' : ''}</span>
+                  <span className="col-change-wrap">등락</span>
                 </div>
                 {(watchList[activeGroup]?.length ?? 0) > 0 ? (
                   buildRows(watchList[activeGroup]).map((row) => {
-                    const { text, cls } = formatChange(row.priceChange, row.priceChangeSign, row.priceChangeRate)
+                    const krxChange = formatChange(row.krx?.priceChange ?? '0', row.krx?.priceChangeSign ?? '3', row.krx?.priceChangeRate ?? '0')
+                    const nxtChange = row.nxt ? formatChange(row.nxt.priceChange, row.nxt.priceChangeSign, row.nxt.priceChangeRate) : null
+                    const showNxt = !isRegularHour() && row.nxt !== null
                     return (
                       <div key={row.code} className="stock-row">
                         <span className="col-name">
                           <span className="stock-name">{row.nameKr}</span>
                           <span className="stock-code">{row.code}</span>
                         </span>
-                        <span className={`col-price ${cls}`}>
-                          {row.priceLoading ? '…' : formatPrice(row.price)}
+                        <span className="col-price-wrap">
+                          <span className={`col-price ${krxChange.cls}`}>
+                            {row.priceLoading ? '…' : formatPrice(row.krx?.price ?? '-')}
+                          </span>
+                          {showNxt && (
+                            <span className={`col-price nxt-price ${nxtChange!.cls}`}>
+                              시외 {formatPrice(row.nxt!.price)}
+                            </span>
+                          )}
                         </span>
-                        <span className={`col-change ${cls}`}>
-                          {row.priceLoading ? '' : text}
+                        <span className="col-change-wrap">
+                          <span className={`col-change ${krxChange.cls}`}>
+                            {row.priceLoading ? '' : krxChange.text}
+                          </span>
+                          {showNxt && nxtChange && (
+                            <span className={`col-change nxt-change ${nxtChange.cls}`}>
+                              {nxtChange.text}
+                            </span>
+                          )}
                         </span>
                       </div>
                     )
