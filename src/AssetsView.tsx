@@ -90,19 +90,18 @@ export function AssetsView() {
               <span className="summary-label">매입금액</span>
               <span className="summary-value">{fmt(summary.purchaseAmountTotal)}원</span>
             </div>
-            <div className="summary-cell" style={{ gridColumn: '2 / -1' }}>
-              <span className="summary-label">{showDaily ? '일간 평가손익' : '평가손익'}</span>
-              {showDaily ? (
-                <SummaryProfitValue value={assets.reduce((sum, item) => {
-                  const live = livePrices.get(item.code)
-                  const curP = live ? parseInt(live.price, 10) : item.currentPrice
-                  const prevP = live ? parseInt(live.prevPrice, 10) : (item.currentPrice - item.priceChange)
-                  const dailyChange = curP - prevP
-                  return sum + dailyChange * item.holdingQty
-                }, 0)} />
-              ) : (
-                <SummaryProfitValue value={summary.profitLossTotal} />
-              )}
+            <div className="summary-cell">
+              <span className="summary-label">총평가손익</span>
+              <SummaryProfitValue value={summary.profitLossTotal} />
+            </div>
+            <div className="summary-cell">
+              <span className="summary-label">일간평가손익</span>
+              <SummaryProfitValue value={assets.reduce((sum, item) => {
+                const live = livePrices.get(item.code)
+                const curP = live ? parseInt(live.price, 10) : item.currentPrice
+                const prevP = live ? parseInt(live.prevPrice, 10) : (item.currentPrice - item.priceChange)
+                return sum + (curP - prevP) * item.holdingQty
+              }, 0)} />
             </div>
           </div>
         </div>
