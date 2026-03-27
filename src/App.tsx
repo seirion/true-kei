@@ -316,6 +316,7 @@ function App() {
                       <span className="col-name">종목명</span>
                       <span className="col-price-wrap">현재가{!isRegularHour() && isNxtHour() ? ' / NXT' : ''}</span>
                       <span className="col-change-wrap">등락</span>
+                      <span className="col-order-placeholder" />
                     </div>
                     {currentCodes.length > 0 ? buildRows(watchList[activeGroup] ?? []).map((row) => {
                       const krxChange = formatChange(row.krx?.priceChange ?? '0', row.krx?.priceChangeSign ?? '3', row.krx?.priceChangeRate ?? '0')

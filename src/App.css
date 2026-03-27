@@ -362,6 +362,13 @@ body {
   cursor: pointer;
   flex-shrink: 0;
   line-height: 1.6;
+  width: 34px;
+  text-align: center;
 }
 
 .btn-order:hover { background: #1565c0; }
+
+.col-order-placeholder {
+  width: 40px;   /* btn-order(34px) + gap(6px) */
+  flex-shrink: 0;
+}
