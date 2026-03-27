@@ -122,12 +122,6 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
   const subscribeOrderBook = useCallback(async (code: string) => {
     setOrderBook(null)
 
-    // 이전 구독 해제
-    if (aspWsRef.current && subscribedAspCodeRef.current) {
-      aspWsRef.current.unsubscribeAsp([subscribedAspCodeRef.current])
-    }
-    subscribedAspCodeRef.current = code
-
     const cfg = loadKisConfig()
     if (!cfg.appKey || !cfg.appSecret) return
 
@@ -137,18 +131,25 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
       try { key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret) } catch { return }
     }
 
-    if (!aspWsRef.current) {
-      aspWsRef.current = new KisWebSocket(
-        key,
-        () => {},          // 체결 콜백 불필요
-        () => {},          // 상태 콜백 불필요
-        (ob) => {
-          if (ob.code === subscribedAspCodeRef.current) setOrderBook(ob)
-        }
-      )
-      aspWsRef.current.connect()
+    // 이전 WS 완전 재생성 (key가 바뀔 수 있으므로 항상 새로 만듦)
+    if (aspWsRef.current) {
+      aspWsRef.current.disconnect()
+      aspWsRef.current = null
     }
-    aspWsRef.current.subscribeAsp([code])
+    subscribedAspCodeRef.current = code
+
+    const ws = new KisWebSocket(
+      key,
+      () => {},
+      () => {},
+      (ob) => {
+        if (ob.code === subscribedAspCodeRef.current) setOrderBook(ob)
+      }
+    )
+    aspWsRef.current = ws
+    ws.connect()
+    // connect 후 onopen에서 subscribeAsp가 자동 복원되도록 먼저 등록
+    ws.subscribeAsp([code])
   }, [approvalKey])
 
   // 종목 선택 시 현재가 조회 + 호가 구독
