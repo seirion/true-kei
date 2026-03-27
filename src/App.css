@@ -130,16 +130,16 @@ body {
 .group-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
 }
 
 .tab {
-  padding: 6px 14px;
+  padding: 4px 11px;
   border: 1px solid #ddd;
   border-radius: 20px;
   background: white;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -162,10 +162,10 @@ body {
 
 .stock-header {
   display: flex;
-  padding: 10px 16px;
+  padding: 6px 12px;
   background: #f9f9f9;
   border-bottom: 1px solid #eee;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: #888;
   font-weight: 600;
 }
@@ -173,7 +173,7 @@ body {
 .stock-row {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 7px 12px;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -183,57 +183,57 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .stock-name {
-  font-size: 0.95rem;
+  font-size: 0.84rem;
   font-weight: 500;
   color: #222;
 }
 
 .stock-code {
-  font-size: 0.75rem;
-  color: #aaa;
+  font-size: 0.68rem;
+  color: #ccc;
 }
 
 .col-price-wrap {
-  width: 110px;
+  width: 95px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1px;
 }
 
 .col-price {
   text-align: right;
-  font-size: 0.95rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: #333;
 }
 
 .nxt-price {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 500;
   color: #888;
 }
 
 .col-change-wrap {
-  width: 140px;
+  width: 120px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1px;
 }
 
 .col-change {
   text-align: right;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #666;
 }
 
 .nxt-change {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   color: #aaa;
 }
 
