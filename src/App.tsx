@@ -6,12 +6,12 @@ import {
   getGoogleRedirectResult,
   loadWatchList,
   loadWatchNames,
-  loadStocks,
   type User,
   type StockInfo,
   isHalt,
   isDesignated,
 } from './firebase'
+import { loadStocksFromMaster } from './stockMaster'
 import { KisSettingsModal, loadKisConfig } from './KisSettings'
 import { SearchModal } from './SearchModal'
 import { AssetsView } from './AssetsView'
@@ -149,7 +149,7 @@ function App() {
         setDataLoading(true); setError(null)
         try {
           const [list, names, stockMap] = await Promise.all([
-            loadWatchList(u.uid), loadWatchNames(u.uid), loadStocks(),
+            loadWatchList(u.uid), loadWatchNames(u.uid), loadStocksFromMaster(),
           ])
           watchListRef.current = list
           setWatchList(list); setWatchNames(names); setStocks(stockMap)

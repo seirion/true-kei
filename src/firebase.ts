@@ -90,17 +90,21 @@ export async function loadWatchNames(uid: string): Promise<(string | null)[]> {
 export interface StockInfo {
   nameKr: string
   prevPrice: string
-  attributes?: Record<string, string>
+  _halt?: boolean       // 마스터 파일 파싱 결과
+  _designated?: boolean // 마스터 파일 파싱 결과
+  attributes?: Record<string, string>  // Firebase 레거시
   [key: string]: unknown
 }
 
 export function isHalt(info: StockInfo): boolean {
+  if (info._halt !== undefined) return info._halt
   const attrs = info.attributes as Record<string, string> | undefined
   if (!attrs) return false
   return attrs['거래정지'] === 'Y' || attrs['거래정지 여부'] === 'Y'
 }
 
 export function isDesignated(info: StockInfo): boolean {
+  if (info._designated !== undefined) return info._designated
   const attrs = info.attributes as Record<string, string> | undefined
   if (!attrs) return false
   return attrs['관리종목'] === 'Y' || attrs['관리 종목 여부'] === 'Y'
