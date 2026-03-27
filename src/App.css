@@ -358,17 +358,16 @@ body {
   border-radius: 5px;
   font-size: 0.7rem;
   font-weight: 600;
-  padding: 2px 7px;
+  padding: 2px 8px;
   cursor: pointer;
   flex-shrink: 0;
   line-height: 1.6;
-  width: 34px;
-  text-align: center;
+  white-space: nowrap;
 }
 
 .btn-order:hover { background: #1565c0; }
 
 .col-order-placeholder {
-  width: 40px;   /* btn-order(34px) + gap(6px) */
+  width: 46px;   /* btn-order 너비 + gap */
   flex-shrink: 0;
 }
