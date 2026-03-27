@@ -155,6 +155,19 @@ function App() {
     kisWsRef.current = kisWs; kisWs.connect(); kisWs.subscribe(codes)
   }
 
+  const handleAccountChange = useCallback(async () => {
+    const cfg = loadKisConfig()
+    if (!cfg.appKey || !cfg.appSecret) return
+    try {
+      const key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret)
+      approvalKeyRef.current = key
+      const codes = [...new Set((watchListRef.current[activeGroup] ?? []).filter(Boolean))]
+      initWsWithCodes(key, codes)
+      if (codes.length > 0) loadGroupPrices(codes)
+    } catch (e) { console.error('계정 전환 후 WebSocket 재시작 실패:', e) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGroup])
+
   const loadGroupPrices = async (codes: string[]) => {
     setPriceLoading(true); setError(null)
     try {
@@ -209,7 +222,7 @@ function App() {
             </div>
           </header>
 
-          {showKisSettings && <KisSettingsModal onClose={closeKisSettings} />}
+          {showKisSettings && <KisSettingsModal onClose={closeKisSettings} onAccountChange={handleAccountChange} />}
           {showSearch && (
             <SearchModal
               stocks={stocks} watchList={watchList} activeGroup={activeGroup}
