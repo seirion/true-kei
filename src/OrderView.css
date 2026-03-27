@@ -351,6 +351,30 @@
   color: #666;
 }
 
+/* OHLCV */
+.ohlcv-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: #444;
+  padding: 4px 2px 2px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 4px;
+}
+
+.ohlcv-row span {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ohlcv-label {
+  font-size: 0.68rem;
+  color: #aaa;
+  margin-right: 1px;
+}
+
 /* 주문 유형 */
 .order-type-group {
   display: flex;

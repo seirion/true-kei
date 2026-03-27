@@ -3,7 +3,7 @@ import { fetchPrice, getAccessToken, type KisPrice } from './kisApi'
 import { loadKisConfig } from './KisSettings'
 import { fetchBalance, type AssetItem } from './kisBalance'
 import { placeOrder, fetchBuyable, type OrderSide, type OrderType, ORDER_TYPE_LABEL } from './kisOrder'
-import { KisWebSocket, fetchWsApprovalKey, type RealTimeOrderBook } from './kisWebSocket'
+import { KisWebSocket, fetchWsApprovalKey, type RealTimeOrderBook, type RealTimeTrade } from './kisWebSocket'
 import './OrderView.css'
 
 function fmt(n: number): string {
@@ -65,6 +65,7 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [orderBook, setOrderBook] = useState<RealTimeOrderBook | null>(null)
+  const [liveTrade, setLiveTrade] = useState<RealTimeTrade | null>(null)
 
   const aspWsRef = useRef<KisWebSocket | null>(null)
   const subscribedAspCodeRef = useRef<string>('')
@@ -138,16 +139,17 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
     }
     subscribedAspCodeRef.current = code
 
+    setLiveTrade(null)
     const ws = new KisWebSocket(
       key,
+      (trade) => { setLiveTrade(trade) },
       () => {},
-      () => {},
-      // code를 클로저로 캡처 — ref 비교 없이 이 WS에서 오는 호가는 항상 반영
       (ob) => { setOrderBook(ob) }
     )
     aspWsRef.current = ws
-    // subscribeAsp 먼저 등록 → connect 시 onopen에서 자동 구독 전송
+    // subscribeAsp/subscribe 먼저 등록 → connect 시 onopen에서 자동 구독 전송
     ws.subscribeAsp([code])
+    ws.subscribe([code])
     ws.connect()
   }, [approvalKey])
 
@@ -368,11 +370,29 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
               ) : currentPrice ? (
                 <span className={`selected-price ${changeInfo?.cls ?? ''}`}>
                   {fmt(parseInt(currentPrice.price, 10))}원
-                  {changeInfo && <span className="price-change-sm"> {changeInfo.text}</span>}
+                  {changeInfo && <span className="price-change-sm"> {changeInfo.text} ({currentPrice.priceChangeRate}%)</span>}
                 </span>
               ) : null}
             </div>
           )}
+
+          {/* OHLCV: REST 초기값, 이후 체결 데이터로 업데이트 */}
+          {selectedCode && (currentPrice || liveTrade) && (() => {
+            const open  = liveTrade?.openPrice  ?? parseInt(currentPrice?.openPrice  ?? '0', 10)
+            const high  = liveTrade?.highPrice  ?? parseInt(currentPrice?.highPrice  ?? '0', 10)
+            const low   = liveTrade?.lowPrice   ?? parseInt(currentPrice?.lowPrice   ?? '0', 10)
+            const close = liveTrade?.price      ?? parseInt(currentPrice?.price      ?? '0', 10)
+            const vol   = liveTrade?.volume     ?? parseInt(currentPrice?.volume     ?? '0', 10)
+            return (
+              <div className="ohlcv-row">
+                <span><span className="ohlcv-label">시</span>{fmt(open)}</span>
+                <span><span className="ohlcv-label up">고</span><span className="up">{fmt(high)}</span></span>
+                <span><span className="ohlcv-label down">저</span><span className="down">{fmt(low)}</span></span>
+                <span><span className="ohlcv-label">종</span>{fmt(close)}</span>
+                <span><span className="ohlcv-label">량</span>{vol >= 1000000 ? (vol/1000000).toFixed(1)+'M' : vol >= 1000 ? (vol/1000).toFixed(0)+'K' : fmt(vol)}</span>
+              </div>
+            )
+          })()}
         </div>
 
         {/* 보유 종목 빠른 선택 (매도) */}

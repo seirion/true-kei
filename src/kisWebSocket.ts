@@ -8,6 +8,9 @@ export interface RealTimeTrade {
   delta: number   // 전일 대비 증감
   rate: number    // 전일 대비율(%)
   volume: number  // 누적 거래량
+  openPrice: number   // 시가
+  highPrice: number   // 고가
+  lowPrice: number    // 저가
   isNxt: boolean  // NXT 거래소 여부
 }
 
@@ -229,6 +232,9 @@ export class KisWebSocket {
         price: parseFloat(fields[2]),
         delta: parseFloat(fields[4]),
         rate: parseFloat(fields[5]),
+        openPrice: parseFloat(fields[7] ?? '0'),
+        highPrice: parseFloat(fields[8] ?? '0'),
+        lowPrice: parseFloat(fields[9] ?? '0'),
         volume: parseFloat(fields[13] ?? '0'),
         isNxt: trId === 'H0NXCNT0',
       }
