@@ -14,6 +14,17 @@ export interface RealTimeTrade {
   isNxt: boolean  // NXT 거래소 여부
 }
 
+// 주문 체결 통보
+export interface OrderExecution {
+  code: string        // 종목코드
+  side: 'buy' | 'sell'
+  execQty: number     // 체결수량
+  execPrice: number   // 체결단가
+  execTime: string    // 체결시각 (HHMMSS)
+  orderQty: number    // 주문수량
+  isFilled: boolean   // 체결여부 (1=체결, 2=확인, 3=취소)
+}
+
 export interface OrderBookLevel {
   price: number
   qty: number
@@ -41,6 +52,7 @@ export function isRegularHour(): boolean {
 
 type TradeCallback = (trade: RealTimeTrade) => void
 type OrderBookCallback = (ob: RealTimeOrderBook) => void
+type ExecutionCallback = (exec: OrderExecution) => void
 
 export class KisWebSocket {
   private ws: WebSocket | null = null
@@ -49,6 +61,7 @@ export class KisWebSocket {
   private subscribedAspCodes = new Set<string>()
   private onTrade: TradeCallback
   private onOrderBook: OrderBookCallback | null
+  private onExecution: ExecutionCallback | null
   private onStatusChange: (connected: boolean) => void
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -56,12 +69,14 @@ export class KisWebSocket {
     approvalKey: string,
     onTrade: TradeCallback,
     onStatusChange: (connected: boolean) => void,
-    onOrderBook?: OrderBookCallback
+    onOrderBook?: OrderBookCallback,
+    onExecution?: ExecutionCallback
   ) {
     this.approvalKey = approvalKey
     this.onTrade = onTrade
     this.onStatusChange = onStatusChange
     this.onOrderBook = onOrderBook ?? null
+    this.onExecution = onExecution ?? null
   }
 
   connect() {
@@ -125,6 +140,26 @@ export class KisWebSocket {
         }
       }
     })
+  }
+
+  // 체결통보 구독 (tr_key: userId|accountNo)
+  subscribeExecution(trKey: string) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.sendSubscribeExecution(trKey, true)
+    }
+  }
+
+  private sendSubscribeExecution(trKey: string, subscribe: boolean) {
+    const msg = JSON.stringify({
+      header: {
+        approval_key: this.approvalKey,
+        custtype: 'P',
+        tr_type: subscribe ? '1' : '2',
+        'content-type': 'utf-8',
+      },
+      body: { input: { tr_id: 'H0STCNI0', tr_key: trKey } },
+    })
+    this.ws?.send(msg)
   }
 
   unsubscribeAll() {
@@ -260,6 +295,31 @@ export class KisWebSocket {
       }
       // asks: 낮은가격순(최우선매도 = asks[0]), bids: 높은가격순(최우선매수 = bids[0])
       this.onOrderBook({ code: fields[0], asks, bids })
+    }
+
+    // 체결통보 (H0STCNI0)
+    // 암호화된 메시지이므로 parts[0]='0', parts[1]='H0STCNI0', parts[2]='count', parts[3]=데이터
+    if (trId === 'H0STCNI0' && this.onExecution) {
+      const fields = parts[3].split('^')
+      // [4]: SELN_BYOV_CLS 01=매도 02=매수
+      // [8]: STCK_SHRN_ISCD 종목코드
+      // [9]: CNTG_QTY 체결수량
+      // [10]: CNTG_UNPR 체결단가
+      // [11]: STCK_CNTG_HOUR 체결시각
+      // [13]: CNTG_YN 1=체결 2=확인 3=취소
+      // [16]: ODER_QTY 주문수량
+      if (fields.length < 17) return
+      const cntgYn = fields[13]
+      if (cntgYn !== '1') return  // 체결만 처리
+      this.onExecution({
+        code: fields[8],
+        side: fields[4] === '02' ? 'buy' : 'sell',
+        execQty: parseInt(fields[9], 10),
+        execPrice: parseInt(fields[10], 10),
+        execTime: fields[11],
+        orderQty: parseInt(fields[16], 10),
+        isFilled: true,
+      })
     }
   }
 }

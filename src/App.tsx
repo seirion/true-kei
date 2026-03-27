@@ -17,7 +17,7 @@ import { SearchModal } from './SearchModal'
 import { AssetsView } from './AssetsView'
 import { OrderView } from './OrderView'
 import { fetchPrices, type KisPrice } from './kisApi'
-import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade, type RealTimeOrderBook } from './kisWebSocket'
+import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade, type RealTimeOrderBook, type OrderExecution } from './kisWebSocket'
 import './App.css'
 
 type TabId = 'assets' | 'watchlist' | 'order'
@@ -85,6 +85,7 @@ function App() {
   const [orderName, setOrderName] = useState<string | undefined>()
   const [orderBook, setOrderBook] = useState<RealTimeOrderBook | null>(null)
   const [liveOrderTrade, setLiveOrderTrade] = useState<RealTimeTrade | null>(null)
+  const [execToasts, setExecToasts] = useState<(OrderExecution & { id: number })[]>([])
 
   const kisWsRef = useRef<KisWebSocket | null>(null)
   const approvalKeyRef = useRef<string>('')
@@ -187,10 +188,8 @@ function App() {
       approvalKey,
       (trade: RealTimeTrade) => {
         if (wsModeRef.current === 'order') {
-          // 주문탭: liveOrderTrade 업데이트
           setLiveOrderTrade(trade)
         } else {
-          // 관심탭: 시세 업데이트
           const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
           const info: KisPrice = {
             price: String(trade.price),
@@ -204,11 +203,21 @@ function App() {
         }
       },
       setWsConnected,
-      (ob) => setOrderBook(ob),  // 호가 콜백
+      (ob) => setOrderBook(ob),
+      (exec: OrderExecution) => {
+        const id = Date.now()
+        setExecToasts(prev => [...prev, { ...exec, id }])
+        setTimeout(() => setExecToasts(prev => prev.filter(t => t.id !== id)), 5000)
+      },
     )
     kisWsRef.current = ws
     ws.connect()
     applyWsSubscription(ws, wsModeRef.current)
+    // 체결통보 구독 (userId|accountNo 형식)
+    const cfg = loadKisConfig()
+    if (cfg.userId && cfg.accountNo) {
+      ws.subscribeExecution(`${cfg.userId}|${cfg.accountNo}`)
+    }
   }, [applyWsSubscription])
 
   const handleAccountChange = useCallback(async () => {
@@ -381,6 +390,19 @@ function App() {
               <span className="nav-label">주식주문</span>
             </button>
           </nav>
+
+          {/* 체결 토스트 */}
+          {execToasts.length > 0 && (
+            <div className="exec-toast-container">
+              {execToasts.map(t => (
+                <div key={t.id} className={`exec-toast ${t.side === 'buy' ? 'exec-buy' : 'exec-sell'}`}>
+                  <span className="exec-toast-side">{t.side === 'buy' ? '매수' : '매도'} 체결</span>
+                  <span className="exec-toast-code">{t.code}</span>
+                  <span className="exec-toast-info">{t.execQty.toLocaleString()}주 × {t.execPrice.toLocaleString()}원</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="login">

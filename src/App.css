@@ -328,6 +328,65 @@ body {
   text-align: center;
 }
 
+/* 체결 토스트 */
+.exec-toast-container {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 200;
+  pointer-events: none;
+  width: calc(100% - 2rem);
+  max-width: 400px;
+}
+
+.exec-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.exec-buy {
+  background: #ffebee;
+  border: 1.5px solid #ef9a9a;
+  color: #c62828;
+}
+
+.exec-sell {
+  background: #e3f2fd;
+  border: 1.5px solid #90caf9;
+  color: #1565c0;
+}
+
+.exec-toast-side {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.exec-toast-code {
+  font-family: monospace;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.exec-toast-info {
+  margin-left: auto;
+  font-weight: 600;
+}
+
 /* 종목 상태 뱃지 */
 .badge {
   display: inline-flex;
