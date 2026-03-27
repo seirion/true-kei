@@ -74,6 +74,21 @@ function App() {
   const approvalKeyRef = useRef<string>('')
   const watchListRef = useRef<string[][]>([])
 
+  // Page Visibility API: 탭이 숨겨지면 WS 해제, 다시 보이면 재연결
+  useEffect(() => {
+    const handleVisibility = () => {
+      const kisWs = kisWsRef.current
+      if (!kisWs) return
+      if (document.hidden) {
+        kisWs.disconnect()
+      } else {
+        kisWs.connect()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
   useEffect(() => {
     getGoogleRedirectResult().catch((e) => console.error('redirect result error:', e))
     const unsubscribe = onAuthChanged(async (u) => {
