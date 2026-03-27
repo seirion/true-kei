@@ -238,7 +238,9 @@ function App() {
           <div className="tab-content">
             {error && <div className="error-msg" style={{ margin: '0 1rem 0.5rem' }}>{error}</div>}
 
-            {activeTab === 'assets' && <AssetsView key={assetsKey} />}
+            <div style={{ display: activeTab === 'assets' ? undefined : 'none' }}>
+              <AssetsView key={assetsKey} />
+            </div>
 
             {activeTab === 'watchlist' && (
               dataLoading ? <div className="center-text">데이터 불러오는 중...</div> : (
