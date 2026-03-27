@@ -18,8 +18,8 @@ export interface OrderBookLevel {
 
 export interface RealTimeOrderBook {
   code: string
-  asks: OrderBookLevel[]  // 매도호가 [0]=최우선매도(가장 낮은), [4]=가장 높은
-  bids: OrderBookLevel[]  // 매수호가 [0]=최우선매수(가장 높은), [4]=가장 낮은
+  asks: OrderBookLevel[]  // 매도호가 [0]=최우선매도(가장 낮은), [9]=가장 높은
+  bids: OrderBookLevel[]  // 매수호가 [0]=최우선매수(가장 높은), [9]=가장 낮은
 }
 
 // 현재 NXT 시간대 여부
@@ -248,7 +248,7 @@ export class KisWebSocket {
       if (fields.length < 43) return
       const asks: OrderBookLevel[] = []
       const bids: OrderBookLevel[] = []
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 10; i++) {
         asks.push({ price: parseFloat(fields[3 + i]), qty: parseFloat(fields[23 + i]) })
         bids.push({ price: parseFloat(fields[13 + i]), qty: parseFloat(fields[33 + i]) })
       }

@@ -131,7 +131,7 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
       try { key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret) } catch { return }
     }
 
-    // 이전 WS 완전 재생성 (key가 바뀔 수 있으므로 항상 새로 만듦)
+    // 이전 WS 완전 해제
     if (aspWsRef.current) {
       aspWsRef.current.disconnect()
       aspWsRef.current = null
@@ -142,14 +142,13 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
       key,
       () => {},
       () => {},
-      (ob) => {
-        if (ob.code === subscribedAspCodeRef.current) setOrderBook(ob)
-      }
+      // code를 클로저로 캡처 — ref 비교 없이 이 WS에서 오는 호가는 항상 반영
+      (ob) => { setOrderBook(ob) }
     )
     aspWsRef.current = ws
-    ws.connect()
-    // connect 후 onopen에서 subscribeAsp가 자동 복원되도록 먼저 등록
+    // subscribeAsp 먼저 등록 → connect 시 onopen에서 자동 구독 전송
     ws.subscribeAsp([code])
+    ws.connect()
   }, [approvalKey])
 
   // 종목 선택 시 현재가 조회 + 호가 구독
