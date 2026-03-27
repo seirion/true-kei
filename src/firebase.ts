@@ -90,7 +90,20 @@ export async function loadWatchNames(uid: string): Promise<(string | null)[]> {
 export interface StockInfo {
   nameKr: string
   prevPrice: string
+  attributes?: Record<string, string>
   [key: string]: unknown
+}
+
+export function isHalt(info: StockInfo): boolean {
+  const attrs = info.attributes as Record<string, string> | undefined
+  if (!attrs) return false
+  return attrs['거래정지'] === 'Y' || attrs['거래정지 여부'] === 'Y'
+}
+
+export function isDesignated(info: StockInfo): boolean {
+  const attrs = info.attributes as Record<string, string> | undefined
+  if (!attrs) return false
+  return attrs['관리종목'] === 'Y' || attrs['관리 종목 여부'] === 'Y'
 }
 
 // stocks/kospi + stocks/kosdaq → Map<code, StockInfo>

@@ -328,6 +328,29 @@ body {
   text-align: center;
 }
 
+/* 종목 상태 뱃지 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.badge-halt {
+  background: #ba1a1a;
+}
+
+.badge-designated {
+  background: #f57c00;
+}
+
 .btn-order {
   background: #1976d2;
   color: white;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchBalance, type AssetItem, type AccountSummary } from './kisBalance'
+import { type StockInfo, isHalt, isDesignated } from './firebase'
 import './AssetsView.css'
 
 function fmt(n: number): string {
@@ -26,9 +27,10 @@ function SummaryProfitValue({ value }: { value: number }) {
 
 interface AssetsViewProps {
   onOrder?: (code: string, name: string) => void
+  stocks?: Map<string, StockInfo>
 }
 
-export function AssetsView({ onOrder }: AssetsViewProps) {
+export function AssetsView({ onOrder, stocks }: AssetsViewProps) {
   const [loading, setLoading] = useState(false)
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [summary, setSummary] = useState<AccountSummary | null>(null)
@@ -128,6 +130,8 @@ export function AssetsView({ onOrder }: AssetsViewProps) {
                 <div className="asset-row1">
                   <div className="asset-name-block">
                     <span className="asset-name">{item.nameKr}</span>
+                    {(() => { const si = stocks?.get(item.code); return si && isHalt(si) ? <span className="badge badge-halt">정</span> : null })()}
+                    {(() => { const si = stocks?.get(item.code); return si && isDesignated(si) ? <span className="badge badge-designated">관</span> : null })()}
                     <span className="asset-code">{item.code}</span>
                   </div>
                   <div className="asset-price-block">

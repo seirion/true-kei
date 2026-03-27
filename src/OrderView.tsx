@@ -349,6 +349,7 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
                 placeholder="종목명 또는 코드 검색"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') { setSearchQuery(''); setSearchResults([]) } }}
               />
               {searchQuery && (
                 <button className="search-cancel-btn" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>✕</button>

@@ -9,6 +9,8 @@ import {
   loadStocks,
   type User,
   type StockInfo,
+  isHalt,
+  isDesignated,
 } from './firebase'
 import { KisSettingsModal, loadKisConfig } from './KisSettings'
 import { SearchModal } from './SearchModal'
@@ -25,7 +27,7 @@ interface PriceInfo {
 }
 
 interface StockRow {
-  code: string; nameKr: string
+  code: string; nameKr: string; halt: boolean; designated: boolean
   krx: PriceInfo | null; nxt: PriceInfo | null
   priceLoading: boolean
 }
@@ -203,7 +205,10 @@ function App() {
         ? { price: p.price, priceChange: p.priceChange, priceChangeSign: p.priceChangeSign, priceChangeRate: p.priceChangeRate }
         : { price: info?.prevPrice ?? '-', priceChange: '0', priceChangeSign: '3', priceChangeRate: '0' }
       return {
-        code, nameKr: info?.nameKr ?? code, krx,
+        code, nameKr: info?.nameKr ?? code,
+        halt: info ? isHalt(info) : false,
+        designated: info ? isDesignated(info) : false,
+        krx,
         nxt: nxt ? { price: nxt.price, priceChange: nxt.priceChange, priceChangeSign: nxt.priceChangeSign, priceChangeRate: nxt.priceChangeRate } : null,
         priceLoading: !p && priceLoading,
       }
@@ -247,7 +252,7 @@ function App() {
             {error && <div className="error-msg" style={{ margin: '0 1rem 0.5rem' }}>{error}</div>}
 
             <div style={{ display: activeTab === 'assets' ? undefined : 'none' }}>
-              <AssetsView key={assetsKey} onOrder={goToOrder} />
+              <AssetsView key={assetsKey} onOrder={goToOrder} stocks={stocks} />
             </div>
 
             {activeTab === 'watchlist' && (
@@ -275,6 +280,8 @@ function App() {
                         <div key={row.code} className="stock-row">
                           <span className="col-name">
                             <span className="stock-name">{row.nameKr}</span>
+                            {row.halt && <span className="badge badge-halt">정</span>}
+                            {row.designated && <span className="badge badge-designated">관</span>}
                             <span className="stock-code">{row.code}</span>
                           </span>
                           <span className="col-price-wrap">
@@ -285,6 +292,7 @@ function App() {
                             <span className={`col-change ${krxChange.cls}`}>{row.priceLoading ? '' : krxChange.text}</span>
                             {showNxt && nxtChange && <span className={`col-change nxt-change ${nxtChange.cls}`}>{nxtChange.text}</span>}
                           </span>
+                          <span style={{ width: '6px', flexShrink: 0 }} />
                           <button className="btn-order" onClick={() => goToOrder(row.code, row.nameKr)}>주문</button>
                         </div>
                       )
