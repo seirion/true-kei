@@ -10,6 +10,23 @@ function fmt(n: number): string {
   return n.toLocaleString()
 }
 
+/** 국내 주식 호가 단위 */
+function tickSize(price: number): number {
+  if (price < 2000) return 1
+  if (price < 5000) return 5
+  if (price < 20000) return 10
+  if (price < 50000) return 50
+  if (price < 100000) return 100
+  if (price < 500000) return 500
+  return 1000
+}
+
+function stepPrice(price: number, up: boolean): number {
+  const tick = tickSize(price)
+  const next = up ? price + tick : price - tick
+  return Math.max(1, next)
+}
+
 function formatChange(change: number, sign: string): { text: string; cls: string } {
   if (change === 0) return { text: '0', cls: '' }
   const isUp = sign === '1' || sign === '2'
@@ -156,17 +173,21 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
   }, [])
 
   // 주문 단가 변경 시 매수 가능 수량 조회
-  const handlePriceBlur = useCallback(async () => {
+  const fetchBuyableForPrice = useCallback(async (priceVal: number) => {
     if (!selectedCode || side !== 'buy') return
-    const price = parseInt(inputPrice.replace(/,/g, ''), 10)
-    if (isNaN(price) || price <= 0) return
+    if (isNaN(priceVal) || priceVal <= 0) return
     try {
-      const info = await fetchBuyable(selectedCode, price)
+      const info = await fetchBuyable(selectedCode, priceVal)
       setBuyableInfo(info)
     } catch (e) {
       console.warn('매수가능조회 실패:', e)
     }
-  }, [selectedCode, inputPrice, side])
+  }, [selectedCode, side])
+
+  const handlePriceBlur = useCallback(async () => {
+    const price = parseInt(inputPrice.replace(/,/g, ''), 10)
+    await fetchBuyableForPrice(price)
+  }, [inputPrice, fetchBuyableForPrice])
 
   // 수량 퀵 입력
   const setQtyPercent = (pct: number) => {
@@ -404,6 +425,10 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
           <div className="order-section">
             <label className="order-label">단가</label>
             <div className="price-input-wrap">
+              <button className="step-btn" onClick={() => {
+                const p = parseInt(inputPrice.replace(/,/g, ''), 10)
+                if (!isNaN(p)) { const next = stepPrice(p, false); setInputPrice(String(next)); fetchBuyableForPrice(next) }
+              }}>▼</button>
               <input
                 className="order-input"
                 type="number"
@@ -412,6 +437,10 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
                 onChange={e => setInputPrice(e.target.value)}
                 onBlur={handlePriceBlur}
               />
+              <button className="step-btn" onClick={() => {
+                const p = parseInt(inputPrice.replace(/,/g, ''), 10)
+                if (!isNaN(p)) { const next = stepPrice(p, true); setInputPrice(String(next)); fetchBuyableForPrice(next) }
+              }}>▲</button>
               <span className="input-unit">원</span>
             </div>
             {currentPrice && (
@@ -426,6 +455,10 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
         <div className="order-section">
           <label className="order-label">수량</label>
           <div className="price-input-wrap">
+            <button className="step-btn" onClick={() => {
+              const q = parseInt(inputQty, 10)
+              if (!isNaN(q) && q > 1) setInputQty(String(q - 1))
+            }}>▼</button>
             <input
               className="order-input"
               type="number"
@@ -433,6 +466,10 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
               value={inputQty}
               onChange={e => setInputQty(e.target.value)}
             />
+            <button className="step-btn" onClick={() => {
+              const q = parseInt(inputQty, 10)
+              setInputQty(String(isNaN(q) ? 1 : q + 1))
+            }}>▲</button>
             <span className="input-unit">주</span>
           </div>
           <div className="qty-quick">
