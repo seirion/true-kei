@@ -43,8 +43,7 @@ export function loadActiveAccountName(): string {
 
 export function saveActiveAccountName(name: string) {
   localStorage.setItem(ACTIVE_KEY, name)
-  // 계정 전환 시 토큰 캐시 무효화
-  localStorage.removeItem('kis_token')
+  // 토큰은 계정(appKey)별로 관리되므로 전환 시 삭제 불필요
 }
 
 export function loadKisConfig(): KisConfig {

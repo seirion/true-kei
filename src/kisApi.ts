@@ -2,39 +2,44 @@ import { loadKisConfig } from './KisSettings'
 
 const KIS_PRICE_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisPrice'
 const KIS_TOKEN_PROXY = 'https://kistoken-ncgnzcdzqa-du.a.run.app'
-const TOKEN_STORAGE_KEY = 'kis_token'
+const TOKEN_STORAGE_PREFIX = 'kis_token_'
 
 interface TokenCache {
   accessToken: string
   expiresAt: number // ms
 }
 
-function loadTokenCache(): TokenCache | null {
+function tokenKey(appKey: string): string {
+  // appKey 앞 12자로 식별 (충분히 고유)
+  return TOKEN_STORAGE_PREFIX + appKey.slice(0, 12)
+}
+
+function loadTokenCache(appKey: string): TokenCache | null {
   try {
-    const raw = localStorage.getItem(TOKEN_STORAGE_KEY)
+    const raw = localStorage.getItem(tokenKey(appKey))
     if (raw) return JSON.parse(raw) as TokenCache
   } catch {}
   return null
 }
 
-function saveTokenCache(token: string, expiresInSec: number) {
+function saveTokenCache(appKey: string, token: string, expiresInSec: number) {
   const cache: TokenCache = {
     accessToken: token,
-    expiresAt: Date.now() + (expiresInSec - 60) * 1000, // 1분 여유
+    expiresAt: Date.now() + (expiresInSec - 60) * 1000,
   }
-  localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(cache))
+  localStorage.setItem(tokenKey(appKey), JSON.stringify(cache))
 }
 
 export async function getAccessToken(): Promise<string> {
-  // 캐시된 토큰이 유효하면 재사용
-  const cache = loadTokenCache()
-  if (cache && Date.now() < cache.expiresAt) {
-    return cache.accessToken
-  }
-
   const config = loadKisConfig()
   if (!config.appKey || !config.appSecret) {
     throw new Error('KIS API 설정이 없습니다. ⚙️ 버튼을 눌러 설정해주세요.')
+  }
+
+  // 계정별 캐시 확인
+  const cache = loadTokenCache(config.appKey)
+  if (cache && Date.now() < cache.expiresAt) {
+    return cache.accessToken
   }
 
   const res = await fetch(`${KIS_TOKEN_PROXY}`, {
@@ -47,17 +52,15 @@ export async function getAccessToken(): Promise<string> {
   })
 
   if (!res.ok) {
-    localStorage.removeItem(TOKEN_STORAGE_KEY)
     throw new Error(`토큰 발급 실패: ${res.status}`)
   }
   const data = await res.json()
   if (!data.access_token) {
-    localStorage.removeItem(TOKEN_STORAGE_KEY)
     throw new Error(data.error_description ?? '토큰 발급 실패')
   }
   const token = data.access_token as string
   const expiresIn = (data.expires_in as number) ?? 86400
-  saveTokenCache(token, expiresIn)
+  saveTokenCache(config.appKey, token, expiresIn)
   return token
 }
 
