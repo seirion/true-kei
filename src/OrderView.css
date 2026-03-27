@@ -163,14 +163,15 @@
   gap: 0.6rem;
   overflow-y: auto;
   min-width: 0;
+  background: #f4f2ff;
 }
 
 /* 매수/매도 탭 */
 .order-side-tabs {
   display: flex;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid #333;
+  border: 1px solid #d8d2f5;
 }
 
 .side-btn {
@@ -179,25 +180,25 @@
   font-size: 0.95rem;
   font-weight: 600;
   border: none;
-  background: #1a1a1a;
-  color: #888;
+  background: #ede9ff;
+  color: #a89ccc;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
 .side-btn.buy-btn.active {
-  background: #c62828;
-  color: #fff;
+  background: #ffcdd2;
+  color: #c62828;
 }
 
 .side-btn.sell-btn.active {
-  background: #1565c0;
-  color: #fff;
+  background: #bbdefb;
+  color: #1565c0;
 }
 
 .side-btn:hover:not(.active) {
-  background: #252525;
-  color: #ccc;
+  background: #e4e0f8;
+  color: #7c6fbf;
 }
 
 /* 섹션 */
@@ -209,8 +210,8 @@
 
 .order-label {
   font-size: 0.72rem;
-  color: #888;
-  font-weight: 500;
+  color: #9e92c8;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -219,21 +220,22 @@
 .order-input {
   width: 100%;
   padding: 0.5rem 0.6rem;
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #f0f0f0;
+  background: #fff;
+  border: 1.5px solid #d5cef5;
+  border-radius: 8px;
+  color: #2d2560;
   font-size: 0.9rem;
   box-sizing: border-box;
 }
 
 .order-input:focus {
   outline: none;
-  border-color: #555;
+  border-color: #9c8fe0;
+  box-shadow: 0 0 0 3px rgba(156,143,224,0.15);
 }
 
 .order-input::placeholder {
-  color: #555;
+  color: #bbb4e0;
 }
 
 /* 단가/수량 래퍼 */
@@ -259,11 +261,11 @@
 
 .price-hint {
   font-size: 0.78rem;
-  color: #888;
+  color: #a89ccc;
 }
 
 .price-hint strong {
-  color: #ccc;
+  color: #5c4db1;
 }
 
 /* 종목 검색 */
@@ -284,7 +286,7 @@
 .search-cancel-btn {
   background: none;
   border: none;
-  color: #666;
+  color: #b0a6d8;
   font-size: 0.9rem;
   cursor: pointer;
   padding: 4px 6px;
@@ -292,7 +294,7 @@
   flex-shrink: 0;
 }
 
-.search-cancel-btn:hover { color: #ccc; }
+.search-cancel-btn:hover { color: #7c6fbf; }
 
 .search-backdrop {
   position: fixed;
@@ -305,12 +307,13 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: #252525;
-  border: 1px solid #333;
-  border-radius: 6px;
+  background: #fff;
+  border: 1.5px solid #d5cef5;
+  border-radius: 8px;
   z-index: 100;
   max-height: 200px;
   overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(100,80,200,0.1);
 }
 
 .search-item {
@@ -319,7 +322,7 @@
   align-items: center;
   padding: 0.45rem 0.6rem;
   cursor: pointer;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid #edeaff;
 }
 
 .search-item:last-child {
@@ -327,17 +330,17 @@
 }
 
 .search-item:hover {
-  background: #333;
+  background: #f0ecff;
 }
 
 .search-name {
   font-size: 0.85rem;
-  color: #e0e0e0;
+  color: #2d2560;
 }
 
 .search-code {
   font-size: 0.72rem;
-  color: #666;
+  color: #a89ccc;
 }
 
 /* 선택된 종목 */
@@ -345,32 +348,32 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.6rem;
-  background: #1e1e1e;
-  border-radius: 6px;
-  border: 1px solid #2a2a2a;
+  padding: 0.5rem 0.7rem;
+  background: #fff;
+  border-radius: 8px;
+  border: 1.5px solid #d5cef5;
 }
 
 .selected-name {
   font-size: 0.88rem;
-  color: #e0e0e0;
-  font-weight: 500;
+  color: #2d2560;
+  font-weight: 600;
 }
 
 .selected-code {
   font-size: 0.72rem;
-  color: #666;
+  color: #b0a6d8;
 }
 
 .selected-price {
   margin-left: auto;
   font-size: 0.92rem;
-  font-weight: 600;
-  color: #e0e0e0;
+  font-weight: 700;
+  color: #2d2560;
 }
 
-.selected-price.up { color: #ef5350; }
-.selected-price.down { color: #42a5f5; }
+.selected-price.up { color: #e53935; }
+.selected-price.down { color: #1976d2; }
 
 .price-change-sm {
   font-size: 0.78rem;
@@ -381,7 +384,7 @@
 .price-loading-sm {
   margin-left: auto;
   font-size: 0.78rem;
-  color: #666;
+  color: #b0a6d8;
 }
 
 /* OHLCV */
@@ -390,12 +393,12 @@
   gap: 0.6rem;
   flex-wrap: wrap;
   font-size: 0.75rem;
-  color: #ccc;
-  padding: 5px 6px;
-  border-top: 1px solid #2a2a2a;
+  color: #4a3f8a;
+  padding: 5px 7px;
+  border-top: 1px solid #d5cef5;
   margin-top: 4px;
-  background: #161616;
-  border-radius: 0 0 6px 6px;
+  background: #edeaff;
+  border-radius: 0 0 8px 8px;
 }
 
 .ohlcv-row span {
@@ -406,7 +409,7 @@
 
 .ohlcv-label {
   font-size: 0.66rem;
-  color: #666;
+  color: #a89ccc;
   margin-right: 1px;
 }
 
@@ -419,19 +422,20 @@
 .order-type-btn {
   flex: 1;
   padding: 0.4rem;
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #888;
+  background: #fff;
+  border: 1.5px solid #d5cef5;
+  border-radius: 8px;
+  color: #a89ccc;
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.15s;
 }
 
 .order-type-btn.active {
-  background: #2a2a2a;
-  border-color: #666;
-  color: #e0e0e0;
+  background: #ede9ff;
+  border-color: #9c8fe0;
+  color: #5c4db1;
+  font-weight: 600;
 }
 
 /* 수량 빠른 버튼 */
@@ -439,23 +443,25 @@
   display: flex;
   gap: 0.3rem;
   margin-top: 0.2rem;
+  justify-content: flex-end;
 }
 
 .qty-btn {
-  flex: 1;
-  padding: 0.3rem 0;
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 5px;
-  color: #aaa;
+  padding: 0.25rem 0.5rem;
+  background: #fff;
+  border: 1.5px solid #d5cef5;
+  border-radius: 6px;
+  color: #9c8fe0;
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s;
+  font-weight: 500;
 }
 
 .qty-btn:hover {
-  background: #2a2a2a;
-  color: #e0e0e0;
+  background: #ede9ff;
+  border-color: #9c8fe0;
+  color: #5c4db1;
 }
 
 /* 보유 종목 */
@@ -469,62 +475,64 @@
   display: flex;
   gap: 0.25rem;
   align-items: center;
-  padding: 0.28rem 0.5rem;
-  background: #1e1e1e;
-  border: 1px solid #333;
+  padding: 0.28rem 0.55rem;
+  background: #fff;
+  border: 1.5px solid #d5cef5;
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.78rem;
-  color: #bbb;
+  color: #6b5fad;
   transition: all 0.15s;
 }
 
 .holding-chip:hover {
-  background: #2a2a2a;
-  border-color: #555;
+  background: #ede9ff;
+  border-color: #9c8fe0;
 }
 
 .holding-chip.selected {
-  border-color: #666;
-  background: #2a2a2a;
-  color: #e0e0e0;
+  border-color: #7c6fbf;
+  background: #ede9ff;
+  color: #3d2f9e;
+  font-weight: 600;
 }
 
 .holding-qty {
-  color: #666;
+  color: #b0a6d8;
   font-size: 0.72rem;
 }
 
 /* 총 주문금액 */
 .order-total {
-  padding: 0.4rem 0.6rem;
-  background: #1a1a1a;
-  border-radius: 6px;
+  padding: 0.45rem 0.7rem;
+  background: #edeaff;
+  border-radius: 8px;
   font-size: 0.85rem;
-  color: #aaa;
+  color: #7c6fbf;
+  border: 1px solid #d5cef5;
 }
 
 .order-total strong {
-  color: #e0e0e0;
+  color: #3d2f9e;
   font-size: 0.95rem;
 }
 
 /* 결과/오류 */
 .order-result {
-  padding: 0.5rem 0.6rem;
-  background: #1b2e1b;
-  border: 1px solid #2e5c2e;
-  border-radius: 6px;
-  color: #81c784;
+  padding: 0.5rem 0.7rem;
+  background: #e8f5e9;
+  border: 1.5px solid #a5d6a7;
+  border-radius: 8px;
+  color: #2e7d32;
   font-size: 0.85rem;
 }
 
 .order-error {
-  padding: 0.5rem 0.6rem;
-  background: #2e1b1b;
-  border: 1px solid #5c2e2e;
-  border-radius: 6px;
-  color: #ef9a9a;
+  padding: 0.5rem 0.7rem;
+  background: #fff3e0;
+  border: 1.5px solid #ffcc80;
+  border-radius: 8px;
+  color: #e65100;
   font-size: 0.85rem;
 }
 
@@ -533,33 +541,40 @@
   width: 100%;
   padding: 0.75rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, transform 0.1s;
   margin-top: auto;
+  letter-spacing: 0.02em;
 }
 
 .order-submit-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
+.order-submit-btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
 .submit-buy {
-  background: #c62828;
+  background: linear-gradient(135deg, #ef5350, #c62828);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(198,40,40,0.25);
 }
 
 .submit-buy:hover:not(:disabled) {
-  background: #d32f2f;
+  opacity: 0.9;
 }
 
 .submit-sell {
-  background: #1565c0;
+  background: linear-gradient(135deg, #42a5f5, #1565c0);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(21,101,192,0.25);
 }
 
 .submit-sell:hover:not(:disabled) {
-  background: #1976d2;
+  opacity: 0.9;
 }
