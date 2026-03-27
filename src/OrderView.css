@@ -360,6 +360,16 @@
   z-index: 99;
 }
 
+.search-section-label {
+  font-size: 0.68rem;
+  color: #b0a6d8;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #edeaff;
+}
+
 .search-dropdown {
   position: absolute;
   top: 100%;

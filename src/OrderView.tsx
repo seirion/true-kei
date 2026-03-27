@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchPrice, getAccessToken, type KisPrice } from './kisApi'
 import { loadKisConfig } from './KisSettings'
 import { fetchBalance, type AssetItem } from './kisBalance'
@@ -48,6 +48,8 @@ interface StockSearchResult {
 }
 
 const ORDER_LAST_STOCK_KEY = 'order_last_stock'
+const ORDER_RECENT_KEY = 'order_recent_stocks'
+const RECENT_MAX = 20
 
 function loadLastStock(): { code: string; name: string } {
   try {
@@ -59,6 +61,20 @@ function loadLastStock(): { code: string; name: string } {
 
 function saveLastStock(code: string, name: string) {
   localStorage.setItem(ORDER_LAST_STOCK_KEY, JSON.stringify({ code, name }))
+}
+
+function loadRecentStocks(): { code: string; name: string }[] {
+  try {
+    const raw = localStorage.getItem(ORDER_RECENT_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
+
+function saveRecentStock(code: string, name: string) {
+  const list = loadRecentStocks().filter(s => s.code !== code)
+  list.unshift({ code, name })
+  localStorage.setItem(ORDER_RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)))
 }
 
 interface Props {
@@ -83,6 +99,9 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
   const [orderType, setOrderType] = useState<OrderType>('00')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [recentVer, setRecentVer] = useState(0)  // recent 업데이트 트리거
+  const recentStocks = useMemo(() => loadRecentStocks(), [recentVer]) // eslint-disable-line react-hooks/exhaustive-deps
   const last = loadLastStock()
   const [selectedCode, setSelectedCode] = useState(initialCode ?? last.code)
   const [selectedName, setSelectedName] = useState(initialName ?? last.name)
@@ -156,6 +175,8 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
     setSelectedCode(code)
     setSelectedName(name)
     saveLastStock(code, name)
+    saveRecentStock(code, name)
+    setRecentVer(v => v + 1)
     setSearchQuery('')
     setSearchResults([])
     setCurrentPrice(null)
@@ -378,22 +399,36 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
                 placeholder="종목명 또는 코드 검색"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Escape') { setSearchQuery(''); setSearchResults([]) } }}
+                onFocus={() => setSearchFocused(true)}
+                onKeyDown={e => { if (e.key === 'Escape') { setSearchQuery(''); setSearchResults([]); setSearchFocused(false) } }}
               />
               {searchQuery && (
-                <button className="search-cancel-btn" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>✕</button>
+                <button className="search-cancel-btn" onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchFocused(false) }}>✕</button>
               )}
             </div>
-            {searchResults.length > 0 && (
+            {/* 검색 결과 또는 최근 종목 suggestion */}
+            {(searchResults.length > 0 || (searchFocused && !searchQuery && recentStocks.length > 0)) && (
               <>
-                <div className="search-backdrop" onClick={() => { setSearchQuery(''); setSearchResults([]) }} />
+                <div className="search-backdrop" onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchFocused(false) }} />
                 <div className="search-dropdown">
-                  {searchResults.map(r => (
-                    <div key={r.code} className="search-item" onClick={() => selectStock(r.code, r.name)}>
-                      <span className="search-name">{r.name}</span>
-                      <span className="search-code">{r.code}</span>
-                    </div>
-                  ))}
+                  {searchResults.length > 0 ? (
+                    searchResults.map(r => (
+                      <div key={r.code} className="search-item" onClick={() => { selectStock(r.code, r.name); setSearchFocused(false) }}>
+                        <span className="search-name">{r.name}</span>
+                        <span className="search-code">{r.code}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="search-section-label">최근 종목</div>
+                      {recentStocks.map(r => (
+                        <div key={r.code} className="search-item" onClick={() => { selectStock(r.code, r.name); setSearchFocused(false) }}>
+                          <span className="search-name">{r.name}</span>
+                          <span className="search-code">{r.code}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </>
             )}
