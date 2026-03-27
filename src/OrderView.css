@@ -1,8 +1,45 @@
+/* 주문탭 루트 */
+.order-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 주문 / 내역 서브탭 */
+.order-top-tabs {
+  display: flex;
+  border-bottom: 1px solid #d5cef5;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.order-top-tab {
+  flex: 1;
+  padding: 0.45rem;
+  border: none;
+  background: #fff;
+  color: #a89ccc;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.order-top-tab.active {
+  color: #5c4db1;
+  font-weight: 700;
+  border-bottom-color: #7c6fbf;
+}
+
+.order-top-tab:hover:not(.active) { background: #f5f3ff; }
+
 /* 전체 좌우 레이아웃 */
 .order-layout {
   display: flex;
   flex-direction: row;
-  height: 100%;
+  flex: 1;
   overflow: hidden;
 }
 

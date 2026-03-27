@@ -4,7 +4,10 @@ import { loadKisConfig } from './KisSettings'
 import { fetchBalance, type AssetItem } from './kisBalance'
 import { placeOrder, fetchBuyable, type OrderSide, type OrderType, ORDER_TYPE_LABEL } from './kisOrder'
 import { type RealTimeOrderBook, type RealTimeTrade } from './kisWebSocket'
+import { OrderHistoryView } from './OrderHistoryView'
 import './OrderView.css'
+
+type OrderSubTab = 'order' | 'history'
 
 function fmt(n: number): string {
   return n.toLocaleString()
@@ -69,6 +72,7 @@ interface Props {
 }
 
 export function OrderView({ stocks, initialCode, initialName, orderBook = null, liveTrade = null, onStockChange }: Props) {
+  const [subTab, setSubTab] = useState<OrderSubTab>('order')
   const [holdings, setHoldings] = useState<AssetItem[]>([])
   const [side, setSide] = useState<OrderSide>('buy')
   const [orderType, setOrderType] = useState<OrderType>('00')
@@ -246,7 +250,16 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
     : 1
 
   return (
-    <div className="order-layout">
+    <div className="order-root">
+      {/* 주문 / 내역 서브탭 */}
+      <div className="order-top-tabs">
+        <button className={`order-top-tab ${subTab === 'order' ? 'active' : ''}`} onClick={() => setSubTab('order')}>주문</button>
+        <button className={`order-top-tab ${subTab === 'history' ? 'active' : ''}`} onClick={() => setSubTab('history')}>주문내역</button>
+      </div>
+
+      {subTab === 'history' ? <OrderHistoryView /> : null}
+
+    <div className="order-layout" style={{ display: subTab === 'order' ? 'flex' : 'none' }}>
       {/* ===== 좌측: 호가창 ===== */}
       <div className="orderbook-panel">
         <div className="ob-title">호가</div>
@@ -512,6 +525,7 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
           {loading ? '처리 중…' : side === 'buy' ? '매수 주문' : '매도 주문'}
         </button>
       </div>
+    </div>
     </div>
   )
 }

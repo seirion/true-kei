@@ -169,6 +169,41 @@ export const kisInquirePsbl = onRequest(
   }
 );
 
+// KIS 당일 주문체결 조회 (TTTC8001R) - ccldDvsn: "00"=전체, "01"=체결, "02"=미체결
+export const kisDailyOrder = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "GET") { res.status(405).send("Method Not Allowed"); return; }
+    const { token, appkey, appsecret, accountNo, ccldDvsn = "00", fk100 = "", nk100 = "" } =
+      req.query as Record<string, string>;
+    if (!token || !appkey || !appsecret || !accountNo) {
+      res.status(400).json({ error: "required params missing" }); return;
+    }
+    const cano = accountNo.replace("-", "").slice(0, 8);
+    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    try {
+      const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
+        .replace(/\. /g, "").replace(".", "");
+      const params = new URLSearchParams({
+        CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
+        INQR_STRT_DT: today, INQR_END_DT: today,
+        SLL_BUY_DVSN_CD: "00", INQR_DVSN: "01",
+        PDNO: "", CCLD_DVSN: ccldDvsn,
+        ORD_GNO_BRNO: "", ODNO: "", INQR_DVSN_3: "00",
+        INQR_DVSN_1: "", CTX_AREA_FK100: fk100, CTX_AREA_NK100: nk100,
+      });
+      const response = await fetch(
+        `${KIS_BASE}/uapi/domestic-stock/v1/trading/inquire-daily-ccld?${params}`,
+        { headers: { Authorization: `Bearer ${token}`, appkey, appsecret, tr_id: "TTTC8001R", custtype: "P" } }
+      );
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // KIS 현재가 조회 프록시
 export const kisPrice = onRequest(
   { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
