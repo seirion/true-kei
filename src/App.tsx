@@ -70,6 +70,7 @@ function App() {
   const [showSearch, setShowSearch] = useState(false)
   const closeSearch = useCallback(() => setShowSearch(false), [])
   const [wsConnected, setWsConnected] = useState(false)
+  const [assetsKey, setAssetsKey] = useState(0)
   const kisWsRef = useRef<KisWebSocket | null>(null)
   const approvalKeyRef = useRef<string>('')
   const watchListRef = useRef<string[][]>([])
@@ -156,6 +157,7 @@ function App() {
   }
 
   const handleAccountChange = useCallback(async () => {
+    setAssetsKey((k) => k + 1)  // AssetsView 리마운트 → 자산 재조회
     const cfg = loadKisConfig()
     if (!cfg.appKey || !cfg.appSecret) return
     try {
@@ -236,7 +238,7 @@ function App() {
           <div className="tab-content">
             {error && <div className="error-msg" style={{ margin: '0 1rem 0.5rem' }}>{error}</div>}
 
-            {activeTab === 'assets' && <AssetsView />}
+            {activeTab === 'assets' && <AssetsView key={assetsKey} />}
 
             {activeTab === 'watchlist' && (
               dataLoading ? <div className="center-text">데이터 불러오는 중...</div> : (
