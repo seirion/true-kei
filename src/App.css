@@ -219,7 +219,7 @@ body {
 }
 
 .col-change-wrap {
-  width: 120px;
+  width: 150px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -228,13 +228,15 @@ body {
 
 .col-change {
   text-align: right;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #666;
+  white-space: nowrap;
 }
 
 .nxt-change {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   color: #aaa;
+  white-space: nowrap;
 }
 
 .up { color: #e53935; }
@@ -427,6 +429,6 @@ body {
 .btn-order:hover { background: #1565c0; }
 
 .col-order-placeholder {
-  width: 46px;   /* btn-order 너비 + gap */
+  width: 48px;   /* btn-order 너비 + gap */
   flex-shrink: 0;
 }
