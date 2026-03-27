@@ -71,6 +71,14 @@ function App() {
   const closeSearch = useCallback(() => setShowSearch(false), [])
   const [wsConnected, setWsConnected] = useState(false)
   const [assetsKey, setAssetsKey] = useState(0)
+  const [orderCode, setOrderCode] = useState<string | undefined>()
+  const [orderName, setOrderName] = useState<string | undefined>()
+
+  const goToOrder = useCallback((code?: string, name?: string) => {
+    if (code) { setOrderCode(code); setOrderName(name ?? code) }
+    handleTabChange('order')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const kisWsRef = useRef<KisWebSocket | null>(null)
   const approvalKeyRef = useRef<string>('')
   const watchListRef = useRef<string[][]>([])
@@ -239,7 +247,7 @@ function App() {
             {error && <div className="error-msg" style={{ margin: '0 1rem 0.5rem' }}>{error}</div>}
 
             <div style={{ display: activeTab === 'assets' ? undefined : 'none' }}>
-              <AssetsView key={assetsKey} />
+              <AssetsView key={assetsKey} onOrder={goToOrder} />
             </div>
 
             {activeTab === 'watchlist' && (
@@ -277,6 +285,7 @@ function App() {
                             <span className={`col-change ${krxChange.cls}`}>{row.priceLoading ? '' : krxChange.text}</span>
                             {showNxt && nxtChange && <span className={`col-change nxt-change ${nxtChange.cls}`}>{nxtChange.text}</span>}
                           </span>
+                          <button className="btn-order" onClick={() => goToOrder(row.code, row.nameKr)}>주문</button>
                         </div>
                       )
                     }) : <p className="empty">이 그룹에 종목이 없습니다.</p>}
@@ -285,9 +294,9 @@ function App() {
               )
             )}
 
-            {activeTab === 'order' && (
-              <OrderView stocks={stocks} approvalKey={approvalKeyRef.current} />
-            )}
+            <div style={{ display: activeTab === 'order' ? undefined : 'none' }}>
+              <OrderView stocks={stocks} approvalKey={approvalKeyRef.current} initialCode={orderCode} initialName={orderName} />
+            </div>
           </div>
 
           {/* 하단 탭 네비게이션 */}

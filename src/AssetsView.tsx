@@ -24,7 +24,11 @@ function SummaryProfitValue({ value }: { value: number }) {
   return <span className={`summary-value ${cls}`}>{sign}{fmt(value)}원</span>
 }
 
-export function AssetsView() {
+interface AssetsViewProps {
+  onOrder?: (code: string, name: string) => void
+}
+
+export function AssetsView({ onOrder }: AssetsViewProps) {
   const [loading, setLoading] = useState(false)
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [summary, setSummary] = useState<AccountSummary | null>(null)
@@ -131,12 +135,15 @@ export function AssetsView() {
                     <ProfitBadge value={pnlValue} rate={pnlRate} />
                   </div>
                 </div>
-                {/* 줄 2: 수량·평균가 (왼) | 평가금액 (오) */}
+                {/* 줄 2: 수량·평균가 (왼) | 평가금액 + 주문버튼 (오) */}
                 <div className="asset-row2">
                   <span className="asset-qty-avg">
                     {fmt(item.holdingQty)}주 · 평균 {fmt(Math.round(item.purchaseAvgPrice))}원
                   </span>
-                  <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
+                    {onOrder && <button className="btn-order" onClick={() => onOrder(item.code, item.nameKr)}>주문</button>}
+                  </div>
                 </div>
               </div>
             )

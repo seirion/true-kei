@@ -26,19 +26,36 @@ interface StockSearchResult {
   name: string
 }
 
+const ORDER_LAST_STOCK_KEY = 'order_last_stock'
+
+function loadLastStock(): { code: string; name: string } {
+  try {
+    const raw = localStorage.getItem(ORDER_LAST_STOCK_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return { code: '005930', name: '삼성전자' }
+}
+
+function saveLastStock(code: string, name: string) {
+  localStorage.setItem(ORDER_LAST_STOCK_KEY, JSON.stringify({ code, name }))
+}
+
 interface Props {
   stocks: Map<string, { nameKr: string; prevPrice?: string }>
   approvalKey?: string
+  initialCode?: string
+  initialName?: string
 }
 
-export function OrderView({ stocks, approvalKey }: Props) {
+export function OrderView({ stocks, approvalKey, initialCode, initialName }: Props) {
   const [holdings, setHoldings] = useState<AssetItem[]>([])
   const [side, setSide] = useState<OrderSide>('buy')
   const [orderType, setOrderType] = useState<OrderType>('00')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
-  const [selectedCode, setSelectedCode] = useState('')
-  const [selectedName, setSelectedName] = useState('')
+  const last = loadLastStock()
+  const [selectedCode, setSelectedCode] = useState(initialCode ?? last.code)
+  const [selectedName, setSelectedName] = useState(initialName ?? last.name)
   const [currentPrice, setCurrentPrice] = useState<KisPrice | null>(null)
   const [priceLoading, setPriceLoading] = useState(false)
   const [inputPrice, setInputPrice] = useState('')
@@ -51,6 +68,22 @@ export function OrderView({ stocks, approvalKey }: Props) {
 
   const aspWsRef = useRef<KisWebSocket | null>(null)
   const subscribedAspCodeRef = useRef<string>('')
+
+  // 초기 종목 자동 조회
+  useEffect(() => {
+    if (selectedCode && selectedName) {
+      selectStock(selectedCode, selectedName)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 외부(주문 버튼)에서 종목 변경 시
+  useEffect(() => {
+    if (initialCode && initialName && initialCode !== selectedCode) {
+      selectStock(initialCode, initialName)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode, initialName])
 
   // 탭 진입 시 보유 종목 자동 로드
   useEffect(() => {
@@ -122,6 +155,7 @@ export function OrderView({ stocks, approvalKey }: Props) {
   const selectStock = useCallback(async (code: string, name: string) => {
     setSelectedCode(code)
     setSelectedName(name)
+    saveLastStock(code, name)
     setSearchQuery('')
     setSearchResults([])
     setCurrentPrice(null)

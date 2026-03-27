@@ -327,3 +327,18 @@ body {
   padding: 6px 0 8px;
   text-align: center;
 }
+
+.btn-order {
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.btn-order:hover { background: #1565c0; }
