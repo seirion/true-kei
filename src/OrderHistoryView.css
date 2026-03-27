@@ -188,3 +188,20 @@
 .history-amount strong {
   color: #3d2f9e;
 }
+
+.history-modify-btn {
+  background: #ede9ff;
+  border: 1.5px solid #9c8fe0;
+  border-radius: 6px;
+  color: #5c4db1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.history-modify-btn:hover {
+  background: #ddd6ff;
+  border-color: #7c6fbf;
+}

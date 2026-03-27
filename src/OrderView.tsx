@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchPrice, getAccessToken, type KisPrice } from './kisApi'
 import { loadKisConfig } from './KisSettings'
 import { fetchBalance, type AssetItem } from './kisBalance'
-import { placeOrder, fetchBuyable, type OrderSide, type OrderType, ORDER_TYPE_LABEL } from './kisOrder'
+import { placeOrder, modifyOrder, fetchBuyable, type OrderSide, type OrderType, ORDER_TYPE_LABEL } from './kisOrder'
+import type { DailyOrderItem } from './kisDailyOrder'
 import { type RealTimeOrderBook, type RealTimeTrade } from './kisWebSocket'
 import { OrderHistoryView } from './OrderHistoryView'
 import './OrderView.css'
@@ -69,10 +70,14 @@ interface Props {
   liveTrade?: RealTimeTrade | null
   // 종목 변경 시 App에 알려 WS 구독 교체
   onStockChange?: (code: string, name: string) => void
+  // 주문 수정 모드
+  modifyTarget?: DailyOrderItem | null
+  onModifyDone?: () => void
 }
 
-export function OrderView({ stocks, initialCode, initialName, orderBook = null, liveTrade = null, onStockChange }: Props) {
+export function OrderView({ stocks, initialCode, initialName, orderBook = null, liveTrade = null, onStockChange, modifyTarget, onModifyDone }: Props) {
   const [subTab, setSubTab] = useState<OrderSubTab>('order')
+  const [internalModifyTarget, setInternalModifyTarget] = useState<DailyOrderItem | null>(null)
   const [holdings, setHoldings] = useState<AssetItem[]>([])
   const [side, setSide] = useState<OrderSide>('buy')
   const [orderType, setOrderType] = useState<OrderType>('00')
@@ -105,6 +110,20 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCode, initialName])
+
+  // 수정 모드 진입 시 종목/단가/수량 초기화
+  useEffect(() => {
+    const t = internalModifyTarget ?? modifyTarget ?? null
+    if (!t) return
+    selectStock(t.code, t.nameKr)
+    setSide(t.side)
+    setInputPrice(String(t.orderPrice))
+    setInputQty(String(t.remainQty))
+    setSubTab('order')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [internalModifyTarget, modifyTarget])
+
+  const activeModify = internalModifyTarget ?? modifyTarget ?? null
 
   // 탭 진입 시 보유 종목 자동 로드
   useEffect(() => {
@@ -222,11 +241,18 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
 
     setLoading(true)
     try {
-      const res = await placeOrder({ code: selectedCode, side, orderType, qty, price })
-      setResult(`✅ 주문 완료! 주문번호: ${res.ordNo}`)
+      if (activeModify) {
+        const res = await modifyOrder(activeModify.orderNo, qty, price)
+        setResult(`✅ 정정 완료! 주문번호: ${res.ordNo}`)
+        setInternalModifyTarget(null)
+        onModifyDone?.()
+      } else {
+        const res = await placeOrder({ code: selectedCode, side, orderType, qty, price })
+        setResult(`✅ 주문 완료! 주문번호: ${res.ordNo}`)
+      }
       setInputQty('')
     } catch (e) {
-      setError(e instanceof Error ? e.message : '주문 실패')
+      setError(e instanceof Error ? e.message : activeModify ? '정정 실패' : '주문 실패')
     } finally {
       setLoading(false)
     }
@@ -257,7 +283,12 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
         <button className={`order-top-tab ${subTab === 'history' ? 'active' : ''}`} onClick={() => setSubTab('history')}>주문내역</button>
       </div>
 
-      {subTab === 'history' ? <OrderHistoryView /> : null}
+      {subTab === 'history' ? (
+        <OrderHistoryView onModify={(item) => {
+          setInternalModifyTarget(item)
+          setSubTab('order')
+        }} />
+      ) : null}
 
     <div className="order-layout" style={{ display: subTab === 'order' ? 'flex' : 'none' }}>
       {/* ===== 좌측: 호가창 ===== */}
@@ -319,7 +350,13 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
       {/* ===== 우측: 주문폼 ===== */}
       <div className="order-view">
         {/* 매수/매도 탭 */}
-        <div className="order-side-tabs">
+        {activeModify && (
+          <div className="modify-banner">
+            ✏️ 주문 정정 모드 — {activeModify.side === 'buy' ? '매수' : '매도'} · 잔여 {activeModify.remainQty.toLocaleString()}주
+            <button className="dismiss-btn" onClick={() => setInternalModifyTarget(null)}>✕</button>
+          </div>
+        )}
+        <div className="order-side-tabs" style={{ display: activeModify ? 'none' : undefined }}>
           <button
             className={`side-btn buy-btn ${side === 'buy' ? 'active' : ''}`}
             onClick={() => { setSide('buy'); setInputQty(''); setBuyableInfo(null) }}
@@ -528,11 +565,11 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
 
         {/* 주문 버튼 */}
         <button
-          className={`order-submit-btn ${side === 'buy' ? 'submit-buy' : 'submit-sell'}`}
+          className={`order-submit-btn ${activeModify ? 'submit-modify' : side === 'buy' ? 'submit-buy' : 'submit-sell'}`}
           onClick={handleOrder}
           disabled={loading || !selectedCode}
         >
-          {loading ? '처리 중…' : side === 'buy' ? '매수 주문' : '매도 주문'}
+          {loading ? '처리 중…' : activeModify ? `정정 주문 (원번호: ${activeModify.orderNo})` : side === 'buy' ? '매수 주문' : '매도 주문'}
         </button>
       </div>
     </div>

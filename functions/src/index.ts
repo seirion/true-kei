@@ -169,6 +169,48 @@ export const kisInquirePsbl = onRequest(
   }
 );
 
+// KIS 주문 정정 프록시 (TTTC0803U)
+export const kisModifyOrder = onRequest(
+  { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },
+  async (req, res) => {
+    if (req.method !== "POST") { res.status(405).send("Method Not Allowed"); return; }
+    const { token, appkey, appsecret, accountNo, orgOdno, ordQty, ordUnpr } =
+      req.body as Record<string, string>;
+    if (!token || !appkey || !appsecret || !accountNo || !orgOdno) {
+      res.status(400).json({ error: "required params missing" }); return;
+    }
+    const cano = accountNo.replace("-", "").slice(0, 8);
+    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    try {
+      const response = await fetch(
+        `${KIS_BASE}/uapi/domestic-stock/v1/trading/order-rvsecncl`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            appkey, appsecret, tr_id: "TTTC0803U", custtype: "P",
+          },
+          body: JSON.stringify({
+            CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
+            KRX_FWDG_ORD_ORGNO: "",
+            ORGN_ODNO: orgOdno,
+            ORD_DVSN: ordUnpr && ordUnpr !== "0" ? "00" : "01",
+            RVSE_CNCL_DVSN_CD: "01",
+            ORD_QTY: ordQty ?? "0",
+            ORD_UNPR: ordUnpr ?? "0",
+            QTY_ALL_ORD_YN: "Y",
+          }),
+        }
+      );
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (e) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // KIS 당일 주문체결 조회 (TTTC8001R) - ccldDvsn: "00"=전체, "01"=체결, "02"=미체결
 export const kisDailyOrder = onRequest(
   { region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" },

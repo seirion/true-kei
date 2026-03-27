@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.kisPrice = exports.kisDailyOrder = exports.kisInquirePsbl = exports.kisOrder = exports.kisBalance = exports.kisApprovalKey = exports.kisToken = void 0;
+exports.kisPrice = exports.kisDailyOrder = exports.kisModifyOrder = exports.kisInquirePsbl = exports.kisOrder = exports.kisBalance = exports.kisApprovalKey = exports.kisToken = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const KIS_BASE = "https://openapi.koreainvestment.com:9443";
 const ALLOWED_ORIGIN = "https://seirion.github.io";
@@ -146,6 +146,45 @@ exports.kisInquirePsbl = (0, https_1.onRequest)({ region: "asia-northeast3", cor
     }
     catch (e) {
         console.error("kisInquirePsbl error:", e);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+// KIS 주문 정정 프록시 (TTTC0803U)
+exports.kisModifyOrder = (0, https_1.onRequest)({ region: "asia-northeast3", cors: ALLOWED_ORIGIN, invoker: "public" }, async (req, res) => {
+    if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+    }
+    const { token, appkey, appsecret, accountNo, orgOdno, ordQty, ordUnpr } = req.body;
+    if (!token || !appkey || !appsecret || !accountNo || !orgOdno) {
+        res.status(400).json({ error: "required params missing" });
+        return;
+    }
+    const cano = accountNo.replace("-", "").slice(0, 8);
+    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    try {
+        const response = await fetch(`${KIS_BASE}/uapi/domestic-stock/v1/trading/order-rvsecncl`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+                appkey, appsecret, tr_id: "TTTC0803U", custtype: "P",
+            },
+            body: JSON.stringify({
+                CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
+                KRX_FWDG_ORD_ORGNO: "",
+                ORGN_ODNO: orgOdno,
+                ORD_DVSN: ordUnpr && ordUnpr !== "0" ? "00" : "01",
+                RVSE_CNCL_DVSN_CD: "01",
+                ORD_QTY: ordQty !== null && ordQty !== void 0 ? ordQty : "0",
+                ORD_UNPR: ordUnpr !== null && ordUnpr !== void 0 ? ordUnpr : "0",
+                QTY_ALL_ORD_YN: "Y",
+            }),
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    }
+    catch (e) {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });

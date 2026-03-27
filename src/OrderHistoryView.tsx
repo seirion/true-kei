@@ -23,7 +23,11 @@ const SUB_TAB_DVSN: Record<SubTab, CcldDvsn> = {
   unexec: '02',
 }
 
-export function OrderHistoryView() {
+interface Props {
+  onModify?: (item: DailyOrderItem) => void
+}
+
+export function OrderHistoryView({ onModify }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('all')
   const [items, setItems] = useState<DailyOrderItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -100,6 +104,9 @@ export function OrderHistoryView() {
                 {!isExec && (
                   <div className="history-row3">
                     <span className="history-status pending">{item.status || '미체결'}</span>
+                    {onModify && item.remainQty > 0 && (
+                      <button className="history-modify-btn" onClick={() => onModify(item)}>정정</button>
+                    )}
                   </div>
                 )}
               </div>

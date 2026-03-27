@@ -655,3 +655,21 @@
 .submit-sell:hover:not(:disabled) {
   opacity: 0.9;
 }
+
+.submit-modify {
+  background: linear-gradient(135deg, #9c8fe0, #5c4db1);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(92,77,177,0.25);
+}
+
+.submit-modify:hover:not(:disabled) { opacity: 0.9; }
+
+.modify-banner {
+  background: #ede9ff;
+  border: 1.5px solid #9c8fe0;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+  color: #5c4db1;
+  font-weight: 600;
+}

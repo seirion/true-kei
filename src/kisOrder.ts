@@ -3,6 +3,7 @@ import { getAccessToken } from './kisApi'
 
 const KIS_ORDER_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisOrder'
 const KIS_INQUIRE_PSBL_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisInquirePsbl'
+const KIS_MODIFY_ORDER_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisModifyOrder'
 
 export type OrderSide = 'buy' | 'sell'
 export type OrderType = '00' | '01' // 00: 지정가, 01: 시장가
@@ -103,5 +104,31 @@ export async function fetchBuyable(code: string, price: number): Promise<Buyable
   return {
     maxBuyQty: parseInt(data.output?.max_buy_qty ?? '0', 10),
     buyableAmount: parseInt(data.output?.ord_psbl_cash ?? '0', 10),
+  }
+}
+
+export async function modifyOrder(orgOdno: string, qty: number, price: number): Promise<OrderResult> {
+  const config = loadKisConfig()
+  if (!config.accountNo || !config.appKey || !config.appSecret) {
+    throw new Error('KIS API 설정이 없습니다.')
+  }
+  const token = await getAccessToken()
+  const res = await fetch(KIS_MODIFY_ORDER_PROXY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token, appkey: config.appKey, appsecret: config.appSecret,
+      accountNo: config.accountNo,
+      orgOdno,
+      ordQty: String(qty),
+      ordUnpr: String(price),
+    }),
+  })
+  if (!res.ok) throw new Error(`정정 요청 실패: HTTP ${res.status}`)
+  const data = await res.json()
+  if (data.rt_cd !== '0') throw new Error(data.msg1 ?? '정정 오류')
+  return {
+    ordNo: data.output?.ODNO ?? '',
+    ordTime: data.output?.ORD_TMD ?? '',
   }
 }
