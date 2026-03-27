@@ -17,7 +17,7 @@ import { SearchModal } from './SearchModal'
 import { AssetsView } from './AssetsView'
 import { OrderView } from './OrderView'
 import { fetchPrices, type KisPrice } from './kisApi'
-import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade } from './kisWebSocket'
+import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade, type RealTimeOrderBook } from './kisWebSocket'
 import './App.css'
 
 type TabId = 'assets' | 'watchlist' | 'order'
@@ -58,6 +58,12 @@ function App() {
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab)
     localStorage.setItem('last_tab', tab)
+    const newMode = tab === 'order' ? 'order' : 'watchlist'
+    if (newMode !== wsModeRef.current) {
+      wsModeRef.current = newMode
+      const ws = kisWsRef.current
+      if (ws) applyWsSubscription(ws, newMode)
+    }
   }
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
@@ -66,6 +72,8 @@ function App() {
   const [nxtPrices, setNxtPrices] = useState<Map<string, KisPrice>>(new Map())
   const [priceLoading, setPriceLoading] = useState(false)
   const [activeGroup, setActiveGroup] = useState(0)
+  // activeGroup이 바뀌면 ref도 동기화
+  useEffect(() => { activeGroupRef.current = activeGroup }, [activeGroup])
   const [error, setError] = useState<string | null>(null)
   const [showKisSettings, setShowKisSettings] = useState(false)
   const closeKisSettings = useCallback(() => setShowKisSettings(false), [])
@@ -75,30 +83,62 @@ function App() {
   const [assetsKey, setAssetsKey] = useState(0)
   const [orderCode, setOrderCode] = useState<string | undefined>()
   const [orderName, setOrderName] = useState<string | undefined>()
+  const [orderBook, setOrderBook] = useState<RealTimeOrderBook | null>(null)
+  const [liveOrderTrade, setLiveOrderTrade] = useState<RealTimeTrade | null>(null)
 
-  const goToOrder = useCallback((code?: string, name?: string) => {
-    if (code) { setOrderCode(code); setOrderName(name ?? code) }
-    handleTabChange('order')
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   const kisWsRef = useRef<KisWebSocket | null>(null)
   const approvalKeyRef = useRef<string>('')
   const watchListRef = useRef<string[][]>([])
+  // 현재 WS 구독 모드: 'watchlist' | 'order'
+  const wsModeRef = useRef<'watchlist' | 'order'>('watchlist')
+  const orderCodeRef = useRef<string>((() => {
+    try { return (JSON.parse(localStorage.getItem('order_last_stock') ?? '{}') as { code?: string }).code ?? '' } catch { return '' }
+  })())
+  const activeGroupRef = useRef<number>(0)
 
-  // Page Visibility API: 탭이 숨겨지면 WS 해제, 다시 보이면 재연결
+  const goToOrder = useCallback((code?: string, name?: string) => {
+    if (code) {
+      setOrderCode(code); setOrderName(name ?? code)
+      orderCodeRef.current = code
+    }
+    handleTabChange('order')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // WS 구독 교체: 탭/종목에 따라 체결+호가 구독 결정
+  const applyWsSubscription = useCallback((ws: KisWebSocket, mode: 'watchlist' | 'order') => {
+    ws.unsubscribeAll()
+    setOrderBook(null)
+    setLiveOrderTrade(null)
+    if (mode === 'watchlist') {
+      const codes = [...new Set((watchListRef.current[activeGroupRef.current] ?? []).filter(Boolean))]
+      if (codes.length > 0) ws.subscribe(codes)
+    } else {
+      const code = orderCodeRef.current
+      if (code) {
+        ws.subscribe([code])
+        ws.subscribeAsp([code])
+      }
+    }
+  }, [])
+
+  // Page Visibility API: hidden → disconnect, visible → reconnect + 재구독
   useEffect(() => {
     const handleVisibility = () => {
-      const kisWs = kisWsRef.current
-      if (!kisWs) return
+      const ws = kisWsRef.current
+      if (!ws) return
       if (document.hidden) {
-        kisWs.disconnect()
+        ws.disconnect()
       } else {
-        kisWs.connect()
+        ws.connect()
+        // connect 후 onopen에서 자동 복원되나, 구독 목록은 applyWsSubscription으로 최신화
+        // (onopen에서 subscribedCodes를 다시 보내므로 여기서는 재적용만)
+        applyWsSubscription(ws, wsModeRef.current)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
-  }, [])
+  }, [applyWsSubscription])
 
   useEffect(() => {
     getGoogleRedirectResult().catch((e) => console.error('redirect result error:', e))
@@ -117,7 +157,7 @@ function App() {
             try {
               const key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret)
               approvalKeyRef.current = key
-              initWsWithCodes(key, list[0] ?? [])
+              initWs(key)
             } catch (e) { console.error('Approval key failed:', e) }
             const codes = [...new Set((list[0] ?? []).filter(Boolean))]
             if (codes.length > 0) loadGroupPrices(codes)
@@ -131,40 +171,45 @@ function App() {
   }, [])
 
   const handleGroupChange = useCallback((idx: number) => {
-    setActiveGroup(idx); setPrices(new Map()); setNxtPrices(new Map())
+    setActiveGroup(idx)
+    activeGroupRef.current = idx
+    setPrices(new Map()); setNxtPrices(new Map())
     const codes = [...new Set((watchListRef.current[idx] ?? []).filter(Boolean))]
-    if (codes.length === 0) return
-    const cfg = loadKisConfig()
-    if (!cfg.appKey || !cfg.appSecret) return
-    if (kisWsRef.current) {
-      kisWsRef.current.unsubscribeAll(); kisWsRef.current.subscribe(codes)
-    } else if (approvalKeyRef.current) {
-      initWsWithCodes(approvalKeyRef.current, watchListRef.current[idx] ?? [])
-    }
-    loadGroupPrices(codes)
-  }, [])
+    if (codes.length > 0) loadGroupPrices(codes)
+    const ws = kisWsRef.current
+    if (ws && wsModeRef.current === 'watchlist') applyWsSubscription(ws, 'watchlist')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyWsSubscription])
 
-  const initWsWithCodes = (approvalKey: string, rawCodes: string[]) => {
+  const initWs = useCallback((approvalKey: string) => {
     kisWsRef.current?.disconnect()
-    const codes = [...new Set(rawCodes.filter(Boolean))]
-    if (codes.length === 0) return
-    const kisWs = new KisWebSocket(
+    const ws = new KisWebSocket(
       approvalKey,
       (trade: RealTimeTrade) => {
-        const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
-        const info: KisPrice = {
-          price: String(trade.price),
-          prevPrice: String(Math.round(trade.price - trade.delta)),
-          priceChange: String(Math.abs(trade.delta)),
-          priceChangeSign: sign, priceChangeRate: String(Math.abs(trade.rate)),
+        if (wsModeRef.current === 'order') {
+          // 주문탭: liveOrderTrade 업데이트
+          setLiveOrderTrade(trade)
+        } else {
+          // 관심탭: 시세 업데이트
+          const sign = trade.delta > 0 ? '2' : trade.delta < 0 ? '5' : '3'
+          const info: KisPrice = {
+            price: String(trade.price),
+            prevPrice: String(Math.round(trade.price - trade.delta)),
+            priceChange: String(Math.abs(trade.delta)),
+            priceChangeSign: sign,
+            priceChangeRate: String(Math.abs(trade.rate)),
+          }
+          if (trade.isNxt) setNxtPrices(prev => new Map(prev).set(trade.code, info))
+          else setPrices(prev => new Map(prev).set(trade.code, info))
         }
-        if (trade.isNxt) setNxtPrices(prev => new Map(prev).set(trade.code, info))
-        else setPrices(prev => new Map(prev).set(trade.code, info))
       },
-      setWsConnected
+      setWsConnected,
+      (ob) => setOrderBook(ob),  // 호가 콜백
     )
-    kisWsRef.current = kisWs; kisWs.connect(); kisWs.subscribe(codes)
-  }
+    kisWsRef.current = ws
+    ws.connect()
+    applyWsSubscription(ws, wsModeRef.current)
+  }, [applyWsSubscription])
 
   const handleAccountChange = useCallback(async () => {
     setAssetsKey((k) => k + 1)  // AssetsView 리마운트 → 자산 재조회
@@ -173,8 +218,8 @@ function App() {
     try {
       const key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret)
       approvalKeyRef.current = key
+      initWs(key)
       const codes = [...new Set((watchListRef.current[activeGroup] ?? []).filter(Boolean))]
-      initWsWithCodes(key, codes)
       if (codes.length > 0) loadGroupPrices(codes)
     } catch (e) { console.error('계정 전환 후 WebSocket 재시작 실패:', e) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -303,7 +348,20 @@ function App() {
             )}
 
             <div style={{ display: activeTab === 'order' ? undefined : 'none' }}>
-              <OrderView stocks={stocks} approvalKey={approvalKeyRef.current} initialCode={orderCode} initialName={orderName} />
+              <OrderView
+                stocks={stocks}
+                initialCode={orderCode}
+                initialName={orderName}
+                orderBook={orderBook}
+                liveTrade={liveOrderTrade}
+                onStockChange={(code, name) => {
+                  orderCodeRef.current = code
+                  setOrderCode(code); setOrderName(name)
+                  setOrderBook(null); setLiveOrderTrade(null)
+                  const ws = kisWsRef.current
+                  if (ws && wsModeRef.current === 'order') applyWsSubscription(ws, 'order')
+                }}
+              />
             </div>
           </div>
 

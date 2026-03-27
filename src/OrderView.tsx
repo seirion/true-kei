@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { fetchPrice, getAccessToken, type KisPrice } from './kisApi'
 import { loadKisConfig } from './KisSettings'
 import { fetchBalance, type AssetItem } from './kisBalance'
 import { placeOrder, fetchBuyable, type OrderSide, type OrderType, ORDER_TYPE_LABEL } from './kisOrder'
-import { KisWebSocket, fetchWsApprovalKey, type RealTimeOrderBook, type RealTimeTrade } from './kisWebSocket'
+import { type RealTimeOrderBook, type RealTimeTrade } from './kisWebSocket'
 import './OrderView.css'
 
 function fmt(n: number): string {
@@ -42,12 +42,16 @@ function saveLastStock(code: string, name: string) {
 
 interface Props {
   stocks: Map<string, { nameKr: string; prevPrice?: string }>
-  approvalKey?: string
   initialCode?: string
   initialName?: string
+  // App에서 주입하는 실시간 데이터
+  orderBook?: RealTimeOrderBook | null
+  liveTrade?: RealTimeTrade | null
+  // 종목 변경 시 App에 알려 WS 구독 교체
+  onStockChange?: (code: string, name: string) => void
 }
 
-export function OrderView({ stocks, approvalKey, initialCode, initialName }: Props) {
+export function OrderView({ stocks, initialCode, initialName, orderBook = null, liveTrade = null, onStockChange }: Props) {
   const [holdings, setHoldings] = useState<AssetItem[]>([])
   const [side, setSide] = useState<OrderSide>('buy')
   const [orderType, setOrderType] = useState<OrderType>('00')
@@ -64,11 +68,6 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [orderBook, setOrderBook] = useState<RealTimeOrderBook | null>(null)
-  const [liveTrade, setLiveTrade] = useState<RealTimeTrade | null>(null)
-
-  const aspWsRef = useRef<KisWebSocket | null>(null)
-  const subscribedAspCodeRef = useRef<string>('')
 
   // 초기 종목 자동 조회
   useEffect(() => {
@@ -95,13 +94,6 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
       .catch(e => console.warn('보유종목 로드 실패:', e))
   }, [])
 
-  // 호가 웹소켓 정리
-  useEffect(() => {
-    return () => {
-      aspWsRef.current?.disconnect()
-    }
-  }, [])
-
   // 종목 검색
   useEffect(() => {
     if (searchQuery.length < 1) {
@@ -119,41 +111,7 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
     setSearchResults(results)
   }, [searchQuery, stocks])
 
-  // 호가 구독 (종목 선택 시)
-  const subscribeOrderBook = useCallback(async (code: string) => {
-    setOrderBook(null)
-
-    const cfg = loadKisConfig()
-    if (!cfg.appKey || !cfg.appSecret) return
-
-    // Approval key: props로 받거나 새로 발급
-    let key = approvalKey ?? ''
-    if (!key) {
-      try { key = await fetchWsApprovalKey(cfg.appKey, cfg.appSecret) } catch { return }
-    }
-
-    // 이전 WS 완전 해제
-    if (aspWsRef.current) {
-      aspWsRef.current.disconnect()
-      aspWsRef.current = null
-    }
-    subscribedAspCodeRef.current = code
-
-    setLiveTrade(null)
-    const ws = new KisWebSocket(
-      key,
-      (trade) => { setLiveTrade(trade) },
-      () => {},
-      (ob) => { setOrderBook(ob) }
-    )
-    aspWsRef.current = ws
-    // subscribeAsp/subscribe 먼저 등록 → connect 시 onopen에서 자동 구독 전송
-    ws.subscribeAsp([code])
-    ws.subscribe([code])
-    ws.connect()
-  }, [approvalKey])
-
-  // 종목 선택 시 현재가 조회 + 호가 구독
+  // 종목 선택 시 현재가 조회
   const selectStock = useCallback(async (code: string, name: string) => {
     setSelectedCode(code)
     setSelectedName(name)
@@ -166,7 +124,7 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
     setResult(null)
     setError(null)
     setPriceLoading(true)
-    subscribeOrderBook(code)
+    onStockChange?.(code, name)
     try {
       const config = loadKisConfig()
       if (config.appKey && config.appSecret) {
@@ -182,7 +140,7 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
     } finally {
       setPriceLoading(false)
     }
-  }, [orderType, subscribeOrderBook])
+  }, [orderType, onStockChange])
 
   // 보유 종목에서 바로 선택 (매도 시 편의)
   const selectHolding = useCallback((item: AssetItem) => {
