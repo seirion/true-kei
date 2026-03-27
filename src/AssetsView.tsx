@@ -113,41 +113,34 @@ export function AssetsView() {
         <p className="assets-empty">보유 종목이 없습니다.</p>
       ) : (
         <div className="asset-list">
-          {assets.map((item) => (
-            <div key={item.code} className="asset-item">
-              {/* 줄 1: 종목명 + 코드 */}
-              <div className="asset-row1">
-                <span className="asset-name">{item.nameKr}</span>
-                <span className="asset-code">{item.code}</span>
-              </div>
-              {/* 줄 2: 수량/평균가 + 현재가 */}
-              <div className="asset-row2">
-                <span className="asset-qty-avg">
-                  {fmt(item.holdingQty)}주 · 평균 {fmt(Math.round(item.purchaseAvgPrice))}원
-                </span>
-                <div className="asset-price-block">
-                  <span className="asset-current-price">{fmt(item.currentPrice)}원</span>
+          {assets.map((item) => {
+            const prevPrice = item.currentPrice - item.priceChange
+            const dailyRate = prevPrice > 0 ? item.priceChange / prevPrice * 100 : 0
+            const pnlValue = showDaily ? item.dailyProfitLoss : item.profitLossAmount
+            const pnlRate = showDaily ? dailyRate : item.profitLossRate
+            return (
+              <div key={item.code} className="asset-item">
+                {/* 줄 1: 종목명+코드 (왼) | 현재가+손익뱃지 (오) */}
+                <div className="asset-row1">
+                  <div className="asset-name-block">
+                    <span className="asset-name">{item.nameKr}</span>
+                    <span className="asset-code">{item.code}</span>
+                  </div>
+                  <div className="asset-price-block">
+                    <span className="asset-current-price">{fmt(item.currentPrice)}원</span>
+                    <ProfitBadge value={pnlValue} rate={pnlRate} />
+                  </div>
+                </div>
+                {/* 줄 2: 수량·평균가 (왼) | 평가금액 (오) */}
+                <div className="asset-row2">
+                  <span className="asset-qty-avg">
+                    {fmt(item.holdingQty)}주 · 평균 {fmt(Math.round(item.purchaseAvgPrice))}원
+                  </span>
+                  <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
                 </div>
               </div>
-              {/* 줄 3: 평가금액 + 손익 */}
-              {(() => {
-                const prevPrice = item.currentPrice - item.priceChange
-                const dailyRate = prevPrice > 0 ? item.priceChange / prevPrice * 100 : 0
-                return (
-                  <div className="asset-row3">
-                    <div>
-                      <span className="asset-eval-label">평가금액 </span>
-                      <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
-                    </div>
-                    {showDaily
-                      ? <ProfitBadge value={item.dailyProfitLoss} rate={dailyRate} label="일간" />
-                      : <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
-                    }
-                  </div>
-                )
-              })()}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

@@ -129,82 +129,79 @@
 }
 
 .asset-item {
-  padding: 14px 16px;
+  padding: 8px 14px;
   border-bottom: 1px solid #f5f5f5;
 }
 
 .asset-item:last-child { border-bottom: none; }
 
-/* 종목명 + 코드 줄 */
+/* 줄 1: 종목명+코드 (왼) | 현재가+손익 (오) */
 .asset-row1 {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
+}
+
+.asset-name-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .asset-name {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .asset-code {
-  font-size: 0.75rem;
-  color: #bbb;
+  font-size: 0.7rem;
+  color: #ccc;
   font-family: monospace;
-}
-
-/* 수량/평균가/현재가 줄 */
-.asset-row2 {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin-bottom: 5px;
+  flex-shrink: 0;
 }
 
 .asset-price-block {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex: 1;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
 .asset-current-price {
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #111;
 }
 
-.asset-qty-avg {
-  font-size: 0.75rem;
-  color: #999;
-  flex: 1;
-}
-
-/* 평가금액 / 손익 줄 */
-.asset-row3 {
+/* 줄 2: 수량·평균가 (왼) | 평가금액 (오) */
+.asset-row2 {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
-.asset-eval-label {
-  font-size: 0.75rem;
-  color: #aaa;
+.asset-qty-avg {
+  font-size: 0.72rem;
+  color: #bbb;
 }
 
 .asset-eval-value {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #444;
+  font-size: 0.72rem;
+  color: #999;
 }
 
 .profit-badge {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 .badge-up {
