@@ -576,23 +576,42 @@
 }
 
 /* 결과/오류 */
-.order-result {
+.order-result,
+.order-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.5rem 0.7rem;
-  background: #e8f5e9;
-  border: 1.5px solid #a5d6a7;
   border-radius: 8px;
-  color: #2e7d32;
   font-size: 0.85rem;
 }
 
+.order-result {
+  background: #e8f5e9;
+  border: 1.5px solid #a5d6a7;
+  color: #2e7d32;
+}
+
 .order-error {
-  padding: 0.5rem 0.7rem;
   background: #fff3e0;
   border: 1.5px solid #ffcc80;
-  border-radius: 8px;
   color: #e65100;
-  font-size: 0.85rem;
 }
+
+.dismiss-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0 2px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.dismiss-btn:hover { opacity: 1; }
 
 /* 주문 버튼 */
 .order-submit-btn {

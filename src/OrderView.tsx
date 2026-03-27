@@ -513,8 +513,18 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
         )}
 
         {/* 결과 / 오류 */}
-        {result && <div className="order-result">{result}</div>}
-        {error && <div className="order-error">{error}</div>}
+        {result && (
+          <div className="order-result">
+            <span>{result}</span>
+            <button className="dismiss-btn" onClick={() => setResult(null)}>✕</button>
+          </div>
+        )}
+        {error && (
+          <div className="order-error">
+            <span>{error}</span>
+            <button className="dismiss-btn" onClick={() => setError(null)}>✕</button>
+          </div>
+        )}
 
         {/* 주문 버튼 */}
         <button
