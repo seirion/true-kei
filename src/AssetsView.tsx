@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { fetchBalance, type AssetItem, type AccountSummary } from './kisBalance'
-import { fetchPrices, type KisPrice } from './kisApi'
 import './AssetsView.css'
 
 function fmt(n: number): string {
@@ -29,7 +28,6 @@ export function AssetsView() {
   const [loading, setLoading] = useState(false)
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [summary, setSummary] = useState<AccountSummary | null>(null)
-  const [livePrices, setLivePrices] = useState<Map<string, KisPrice>>(new Map())
   const [error, setError] = useState<string | null>(null)
   const [showDaily, setShowDaily] = useState(false)
 
@@ -40,14 +38,6 @@ export function AssetsView() {
       const result = await fetchBalance()
       setAssets(result.assets)
       setSummary(result.summary)
-      // 보유 종목 현재가 조회 (전일 대비 계산용)
-      const codes = result.assets.map(a => a.code)
-      if (codes.length > 0) {
-        const priceMap = new Map<string, KisPrice>()
-        await fetchPrices(codes, (code, price) => {
-          if (price) { priceMap.set(code, price); setLivePrices(new Map(priceMap)) }
-        })
-      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '잔고 조회 실패')
     } finally {
@@ -96,12 +86,7 @@ export function AssetsView() {
             </div>
             <div className="summary-cell">
               <span className="summary-label">일간평가손익</span>
-              <SummaryProfitValue value={assets.reduce((sum, item) => {
-                const live = livePrices.get(item.code)
-                const curP = live ? parseInt(live.price, 10) : item.currentPrice
-                const prevP = live ? parseInt(live.prevPrice, 10) : (item.currentPrice - item.priceChange)
-                return sum + (curP - prevP) * item.holdingQty
-              }, 0)} />
+              <SummaryProfitValue value={assets.reduce((sum, item) => sum + item.dailyProfitLoss, 0)} />
             </div>
           </div>
         </div>
@@ -146,15 +131,8 @@ export function AssetsView() {
               </div>
               {/* 줄 3: 평가금액 + 손익 */}
               {(() => {
-                // 일간 손익: (현재가 - 전일종가) × 수량
-                // live.priceChange 는 절댓값, sign으로 방향 결정
-                const live = livePrices.get(item.code)
-                // 일간 손익 = (현재가 - 전일종가) × 수량
-                const curPrice = live ? parseInt(live.price, 10) : item.currentPrice
-                const prevPrice = live ? parseInt(live.prevPrice, 10) : (item.currentPrice - item.priceChange)
-                const dailyChange = curPrice - prevPrice
-                const dailyRate = prevPrice > 0 ? dailyChange / prevPrice * 100 : 0
-                const dailyPnl = dailyChange * item.holdingQty
+                const prevPrice = item.currentPrice - item.priceChange
+                const dailyRate = prevPrice > 0 ? item.priceChange / prevPrice * 100 : 0
                 return (
                   <div className="asset-row3">
                     <div>
@@ -162,7 +140,7 @@ export function AssetsView() {
                       <span className="asset-eval-value">{fmt(item.evaluationAmount)}원</span>
                     </div>
                     {showDaily
-                      ? <ProfitBadge value={dailyPnl} rate={dailyRate} label="일간" />
+                      ? <ProfitBadge value={item.dailyProfitLoss} rate={dailyRate} label="일간" />
                       : <ProfitBadge value={item.profitLossAmount} rate={item.profitLossRate} />
                     }
                   </div>
