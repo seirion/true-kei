@@ -106,18 +106,99 @@ export function isDesignated(info: StockInfo): boolean {
   return attrs['관리종목'] === 'Y' || attrs['관리 종목 여부'] === 'Y'
 }
 
-// stocks/kospi + stocks/kosdaq → Map<code, StockInfo>
+// ── IndexedDB 캐시: stocks 데이터를 로컬에 저장 ──────────────────────────
+const IDB_NAME = 'kei-cache'
+const IDB_STORE = 'stocks'
+const IDB_KEY = 'data'
+
+function openIDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1)
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+interface StocksCache {
+  timestamp: number
+  data: Record<string, StockInfo>
+}
+
+async function readIDBCache(): Promise<StocksCache | null> {
+  try {
+    const db = await openIDB()
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly')
+      const req = tx.objectStore(IDB_STORE).get(IDB_KEY)
+      req.onsuccess = () => resolve((req.result as StocksCache) ?? null)
+      req.onerror = () => resolve(null)
+    })
+  } catch { return null }
+}
+
+async function writeIDBCache(data: Record<string, StockInfo>): Promise<void> {
+  try {
+    const db = await openIDB()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite')
+      tx.objectStore(IDB_STORE).put({ timestamp: Date.now(), data }, IDB_KEY)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } catch (e) { console.warn('IDB write failed:', e) }
+}
+
+/** 오전 8시 / 오후 4시 이후가 됐는지 확인해 캐시 신선도 판단 */
+function isStocksCacheValid(timestamp: number): boolean {
+  const now = new Date()
+  const cached = new Date(timestamp)
+
+  // 오늘 08:00 / 16:00
+  const t8 = new Date(now); t8.setHours(8, 0, 0, 0)
+  const t16 = new Date(now); t16.setHours(16, 0, 0, 0)
+
+  // 현재 시각이 속하는 "유효 구간" 시작점
+  let validFrom: Date
+  if (now >= t16) validFrom = t16         // 16:00 이후 → 16:00 이후 갱신된 것만 유효
+  else if (now >= t8) validFrom = t8      // 08:00~16:00 → 08:00 이후 갱신된 것만 유효
+  else {
+    // 자정~08:00 → 전날 16:00 이후 갱신된 것만 유효
+    validFrom = new Date(t16); validFrom.setDate(validFrom.getDate() - 1)
+  }
+
+  return cached >= validFrom
+}
+
+// stocks/kospi + stocks/kosdaq → Map<code, StockInfo>  (캐시 우선)
 export async function loadStocks(): Promise<Map<string, StockInfo>> {
+  // 1. 캐시 확인
+  const cache = await readIDBCache()
+  if (cache && isStocksCacheValid(cache.timestamp)) {
+    console.log('[stocks] cache hit', new Date(cache.timestamp).toLocaleTimeString())
+    const result = new Map<string, StockInfo>()
+    for (const [code, info] of Object.entries(cache.data)) result.set(code, info)
+    return result
+  }
+
+  // 2. Firebase에서 fetch
+  console.log('[stocks] cache miss → fetching from Firebase')
   const snapshot = await get(ref(db, 'stocks'))
   const val = snapshot.val()
   if (!val) return new Map()
 
+  const flat: Record<string, StockInfo> = {}
   const result = new Map<string, StockInfo>()
   for (const market of ['kospi', 'kosdaq']) {
     const items = val[market] ?? {}
     for (const [code, info] of Object.entries(items)) {
-      result.set(code.trim(), info as StockInfo)
+      const key = code.trim()
+      flat[key] = info as StockInfo
+      result.set(key, info as StockInfo)
     }
   }
+
+  // 3. 캐시에 저장
+  await writeIDBCache(flat)
   return result
 }
