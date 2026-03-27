@@ -342,22 +342,30 @@ export function OrderView({ stocks, approvalKey, initialCode, initialName }: Pro
         <div className="order-section">
           <label className="order-label">종목</label>
           <div className="stock-search-wrap">
-            <input
-              className="order-input"
-              type="text"
-              placeholder="종목명 또는 코드 검색"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
+            <div className="search-input-row">
+              <input
+                className="order-input"
+                type="text"
+                placeholder="종목명 또는 코드 검색"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="search-cancel-btn" onClick={() => { setSearchQuery(''); setSearchResults([]) }}>✕</button>
+              )}
+            </div>
             {searchResults.length > 0 && (
-              <div className="search-dropdown">
-                {searchResults.map(r => (
-                  <div key={r.code} className="search-item" onClick={() => selectStock(r.code, r.name)}>
-                    <span className="search-name">{r.name}</span>
-                    <span className="search-code">{r.code}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="search-backdrop" onClick={() => { setSearchQuery(''); setSearchResults([]) }} />
+                <div className="search-dropdown">
+                  {searchResults.map(r => (
+                    <div key={r.code} className="search-item" onClick={() => selectStock(r.code, r.name)}>
+                      <span className="search-name">{r.name}</span>
+                      <span className="search-code">{r.code}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
