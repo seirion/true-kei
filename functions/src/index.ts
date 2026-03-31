@@ -78,8 +78,9 @@ export const kisBalance = onRequest(
     if (!token || !appkey || !appsecret || !accountNo) {
       res.status(400).json({ error: "token, appkey, appsecret, accountNo required" }); return;
     }
-    const cano = accountNo.replace("-", "").slice(0, 8);
-    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    const normalized = accountNo.replace(/[-\s]/g, "");
+    const cano = normalized.slice(0, 8);
+    const acntPrdtCd = normalized.slice(8);
     try {
       const params = new URLSearchParams({
         CANO: cano, ACNT_PRDT_CD: acntPrdtCd,
@@ -179,8 +180,9 @@ export const kisModifyOrder = onRequest(
     if (!token || !appkey || !appsecret || !accountNo || !orgOdno) {
       res.status(400).json({ error: "required params missing" }); return;
     }
-    const cano = accountNo.replace("-", "").slice(0, 8);
-    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    const _normalized1 = accountNo.replace(/[-\s]/g, "");
+    const cano = _normalized1.slice(0, 8);
+    const acntPrdtCd = _normalized1.slice(8);
     try {
       const response = await fetch(
         `${KIS_BASE}/uapi/domestic-stock/v1/trading/order-rvsecncl`,
@@ -221,8 +223,9 @@ export const kisDailyOrder = onRequest(
     if (!token || !appkey || !appsecret || !accountNo) {
       res.status(400).json({ error: "required params missing" }); return;
     }
-    const cano = accountNo.replace("-", "").slice(0, 8);
-    const acntPrdtCd = accountNo.replace("-", "").slice(8);
+    const _normalized2 = accountNo.replace(/[-\s]/g, "");
+    const cano = _normalized2.slice(0, 8);
+    const acntPrdtCd = _normalized2.slice(8);
     try {
       const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
         .replace(/\. /g, "").replace(".", "");
