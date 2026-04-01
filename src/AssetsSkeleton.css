@@ -1,0 +1,87 @@
+/* shimmer animation */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, #ececec 25%, #f5f5f5 50%, #ececec 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 4px;
+}
+
+/* 요약 카드 스켈레톤 */
+.skeleton-summary-card {
+  background: linear-gradient(135deg, #c8b8ae 0%, #d4c4ba 100%);
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.skeleton-summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.skeleton-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.skeleton-summary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 섹션 헤더 스켈레톤 */
+.skeleton-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0 2px;
+}
+
+/* 종목 아이템 스켈레톤 */
+.skeleton-asset-list {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.skeleton-asset-item {
+  padding: 8px 14px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.skeleton-asset-item:last-child {
+  border-bottom: none;
+}
+
+.skeleton-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.skeleton-row2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 요약 카드 내부 박스 (밝게) */
+.skeleton-summary-card .skeleton-box {
+  background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0.25) 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.4s infinite linear;
+}

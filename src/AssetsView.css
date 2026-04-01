@@ -4,6 +4,20 @@
   margin: 0 auto;
 }
 
+/* 새로고침 스피너 */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.refresh-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e0d6cf;
+  border-top-color: #8d6e4f;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 .assets-center {
   display: flex;
   justify-content: center;

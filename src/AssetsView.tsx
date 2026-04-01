@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchBalance, type AssetItem, type AccountSummary } from './kisBalance'
 import { type StockInfo, isHalt, isDesignated } from './firebase'
+import { AssetsSkeleton } from './AssetsSkeleton'
 import './AssetsView.css'
 
 function fmt(n: number): string {
@@ -53,7 +54,8 @@ export function AssetsView({ onOrder, stocks }: AssetsViewProps) {
 
   useEffect(() => { load() }, [])
 
-  if (loading) return <div className="assets-center">잔고 조회 중...</div>
+  // 초기 로딩 (데이터 없음): 스켈레톤
+  if (loading && assets.length === 0) return <AssetsSkeleton />
   if (error) return (
     <div className="assets-center" style={{ flexDirection: 'column', gap: '1rem' }}>
       <div className="error-msg" style={{ margin: 0 }}>{error}</div>
@@ -63,6 +65,12 @@ export function AssetsView({ onOrder, stocks }: AssetsViewProps) {
 
   return (
     <div className="assets-view">
+      {/* 새로고침 중 (기존 데이터 있음): 상단 인디케이터 */}
+      {loading && assets.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0', marginBottom: '4px' }}>
+          <div className="refresh-spinner" />
+        </div>
+      )}
       {summary && (
         <div className="summary-card">
           <div className="summary-total-row">
