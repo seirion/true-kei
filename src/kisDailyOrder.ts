@@ -1,7 +1,7 @@
 import { loadKisConfig } from './KisSettings'
 import { getAccessToken } from './kisApi'
 
-const KIS_DAILY_ORDER_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisDailyOrder'
+const KIS_DAILY_ORDER_PROXY = 'https://kis-proxy.seirion.workers.dev/daily-order'
 
 export type CcldDvsn = '00' | '01' | '02' // 00=전체, 01=체결, 02=미체결
 

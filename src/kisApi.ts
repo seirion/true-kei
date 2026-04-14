@@ -1,7 +1,8 @@
 import { loadKisConfig } from './KisSettings'
 
-const KIS_PRICE_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisPrice'
-const KIS_TOKEN_PROXY = 'https://kistoken-ncgnzcdzqa-du.a.run.app'
+const WORKER_BASE = 'https://kis-proxy.seirion.workers.dev'
+const KIS_PRICE_PROXY = `${WORKER_BASE}/price`
+const KIS_TOKEN_PROXY = `${WORKER_BASE}/token`
 const TOKEN_STORAGE_PREFIX = 'kis_token_'
 
 interface TokenCache {

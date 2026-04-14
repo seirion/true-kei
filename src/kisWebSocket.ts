@@ -1,6 +1,6 @@
 // KIS WebSocket 프록시 URL (Cloud Run)
 // Cloud Run은 HTTPS/WSS를 자동 처리
-const WS_PROXY_URL = 'wss://kis-ws-proxy-ncgnzcdzqa-du.a.run.app'
+const WS_PROXY_URL = 'wss://kis-proxy.seirion.workers.dev/ws'
 
 export interface RealTimeTrade {
   code: string
@@ -324,7 +324,7 @@ export class KisWebSocket {
   }
 }
 
-const KIS_APPROVAL_KEY_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisApprovalKey'
+const KIS_APPROVAL_KEY_PROXY = 'https://kis-proxy.seirion.workers.dev/approval-key'
 
 // WebSocket Approval Key 발급 (Firebase Function 경유)
 export async function fetchWsApprovalKey(appKey: string, appSecret: string): Promise<string> {

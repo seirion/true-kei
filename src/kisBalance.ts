@@ -1,7 +1,7 @@
 import { loadKisConfig } from './KisSettings'
 import { getAccessToken } from './kisApi'
 
-const KIS_BALANCE_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisBalance'
+const KIS_BALANCE_PROXY = 'https://kis-proxy.seirion.workers.dev/balance'
 
 export interface AssetItem {
   code: string

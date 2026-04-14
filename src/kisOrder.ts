@@ -1,9 +1,10 @@
 import { loadKisConfig } from './KisSettings'
 import { getAccessToken } from './kisApi'
 
-const KIS_ORDER_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisOrder'
-const KIS_INQUIRE_PSBL_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisInquirePsbl'
-const KIS_MODIFY_ORDER_PROXY = 'https://asia-northeast3-true-project-9bd97.cloudfunctions.net/kisModifyOrder'
+const WORKER_BASE = 'https://kis-proxy.seirion.workers.dev'
+const KIS_ORDER_PROXY = `${WORKER_BASE}/order`
+const KIS_INQUIRE_PSBL_PROXY = `${WORKER_BASE}/inquire-psbl`
+const KIS_MODIFY_ORDER_PROXY = `${WORKER_BASE}/modify-order`
 
 export type OrderSide = 'buy' | 'sell'
 export type OrderType = '00' | '01' // 00: 지정가, 01: 시장가
