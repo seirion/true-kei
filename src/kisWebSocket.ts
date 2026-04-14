@@ -1,6 +1,6 @@
 // KIS WebSocket 프록시 URL (Cloud Run)
 // Cloud Run은 HTTPS/WSS를 자동 처리
-const WS_PROXY_URL = 'wss://kis-proxy.seirion.workers.dev/ws'
+const WS_PROXY_URL = 'wss://kis-ws-proxy-ncgnzcdzqa-du.a.run.app'
 
 export interface RealTimeTrade {
   code: string
