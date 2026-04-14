@@ -14,6 +14,7 @@
  *   GET  /inquire-psbl    - 매수 가능 조회
  *   POST /modify-order    - 주문 정정
  *   GET  /daily-order     - 당일 주문체결 조회
+ *   GET  /asking-price    - 주식현재가 호가 조회 (REST, 초기 1회용)
  *   GET  /ws              - WebSocket 프록시 (KIS ↔ 브라우저)
  */
 
@@ -50,6 +51,8 @@ export default {
         res = await handleModifyOrder(request)
       } else if (path === '/daily-order' && request.method === 'GET') {
         res = await handleDailyOrder(request)
+      } else if (path === '/asking-price' && request.method === 'GET') {
+        res = await handleAskingPrice(request)
       } else if (path === '/ws') {
         // WebSocket 업그레이드
         const upgradeHeader = request.headers.get('Upgrade')
@@ -318,6 +321,31 @@ async function handleDailyOrder(request: Request): Promise<Response> {
   const res = await fetch(
     `${KIS_BASE}/uapi/domestic-stock/v1/trading/inquire-daily-ccld?${params}`,
     { headers: { Authorization: `Bearer ${token}`, appkey, appsecret, tr_id: 'TTTC8001R', custtype: 'P' } }
+  )
+  return new Response(await res.text(), {
+    status: res.status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+// GET /asking-price — 주식현재가 호가 조회 (FHKST01010200)
+async function handleAskingPrice(request: Request): Promise<Response> {
+  const url = new URL(request.url)
+  const { code, token, appkey, appsecret, market = 'J' } = Object.fromEntries(url.searchParams)
+  if (!code || !token || !appkey || !appsecret) {
+    return new Response(JSON.stringify({ error: 'code, token, appkey, appsecret are required' }), { status: 400 })
+  }
+  const res = await fetch(
+    `${KIS_BASE}/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn?FID_COND_MRKT_DIV_CODE=${market}&FID_INPUT_ISCD=${code}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        appkey,
+        appsecret,
+        tr_id: 'FHKST01010200',
+        custtype: 'P',
+      },
+    }
   )
   return new Response(await res.text(), {
     status: res.status,

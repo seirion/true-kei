@@ -16,7 +16,7 @@ import { KisSettingsModal, loadKisConfig } from './KisSettings'
 import { SearchModal } from './SearchModal'
 import { AssetsView } from './AssetsView'
 import { OrderView } from './OrderView'
-import { fetchPrices, type KisPrice } from './kisApi'
+import { fetchPrices, type KisPrice, type AskingPrice } from './kisApi'
 import { KisWebSocket, fetchWsApprovalKey, isNxtHour, isRegularHour, type RealTimeTrade, type RealTimeOrderBook, type OrderExecution } from './kisWebSocket'
 import './App.css'
 
@@ -370,6 +370,15 @@ function App() {
                   setOrderBook(null); setLiveOrderTrade(null)
                   const ws = kisWsRef.current
                   if (ws && wsModeRef.current === 'order') applyWsSubscription(ws, 'order')
+                }}
+                onInitialOrderBook={(ap: AskingPrice) => {
+                  // REST 호가 → RealTimeOrderBook 형태로 변환해 초기 표시
+                  // WS 데이터가 아직 없을 때만 적용 (WS 수신 시 자동으로 덮어써짐)
+                  setOrderBook(prev => prev ?? {
+                    code: orderCodeRef.current,
+                    asks: ap.asks,
+                    bids: ap.bids,
+                  })
                 }}
               />
             </div>

@@ -2,6 +2,7 @@ import { loadKisConfig } from './KisSettings'
 
 const WORKER_BASE = 'https://kis-proxy.seirion.workers.dev'
 const KIS_PRICE_PROXY = `${WORKER_BASE}/price`
+const KIS_ASKING_PRICE_PROXY = `${WORKER_BASE}/asking-price`
 const KIS_TOKEN_PROXY = `${WORKER_BASE}/token`
 const TOKEN_STORAGE_PREFIX = 'kis_token_'
 
@@ -135,4 +136,52 @@ export async function fetchPrices(
   }
 
   return result
+}
+
+export interface AskingPriceLevel {
+  price: number
+  qty: number
+}
+
+export interface AskingPrice {
+  asks: AskingPriceLevel[]  // 매도호가 [0]=최우선(가장 낮음) ~ [9]
+  bids: AskingPriceLevel[]  // 매수호가 [0]=최우선(가장 높음) ~ [9]
+}
+
+/**
+ * 주식현재가 호가 조회 (REST, FHKST01010200)
+ * WebSocket 연결 전 초기 1회 호가창 채우기 용도
+ */
+export async function fetchAskingPrice(code: string, token: string, market = 'J'): Promise<AskingPrice | null> {
+  const config = loadKisConfig()
+  const params = new URLSearchParams({
+    code,
+    token,
+    appkey: config.appKey,
+    appsecret: config.appSecret,
+    market,
+  })
+  const res = await fetch(`${KIS_ASKING_PRICE_PROXY}?${params}`)
+  if (!res.ok) {
+    console.error(`fetchAskingPrice ${code} HTTP ${res.status}`)
+    return null
+  }
+  const data = await res.json()
+  if (data.rt_cd !== '0') {
+    console.error(`fetchAskingPrice ${code} rt_cd=${data.rt_cd} msg=${data.msg1}`)
+    return null
+  }
+  const o = data.output1
+  // output1 필드:
+  // askp1~10: 매도호가 (낮은→높은)
+  // askp_rsqn1~10: 매도호가잔량
+  // bidp1~10: 매수호가 (높은→낮은)
+  // bidp_rsqn1~10: 매수호가잔량
+  const asks: AskingPriceLevel[] = []
+  const bids: AskingPriceLevel[] = []
+  for (let i = 1; i <= 10; i++) {
+    asks.push({ price: parseInt(o[`askp${i}`] ?? '0', 10), qty: parseInt(o[`askp_rsqn${i}`] ?? '0', 10) })
+    bids.push({ price: parseInt(o[`bidp${i}`] ?? '0', 10), qty: parseInt(o[`bidp_rsqn${i}`] ?? '0', 10) })
+  }
+  return { asks, bids }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { fetchPrice, getAccessToken, type KisPrice } from './kisApi'
+import { fetchPrice, fetchAskingPrice, getAccessToken, type KisPrice, type AskingPrice } from './kisApi'
 import { loadKisConfig } from './KisSettings'
 import { fetchBalance, type AssetItem } from './kisBalance'
 import { placeOrder, modifyOrder, fetchBuyable, type OrderSide, type OrderType, ORDER_TYPE_LABEL } from './kisOrder'
@@ -86,12 +86,14 @@ interface Props {
   liveTrade?: RealTimeTrade | null
   // 종목 변경 시 App에 알려 WS 구독 교체
   onStockChange?: (code: string, name: string) => void
+  // REST로 조회한 초기 호가 데이터를 App에 전달 (WS 연결 전 선표시용)
+  onInitialOrderBook?: (ob: AskingPrice) => void
   // 주문 수정 모드
   modifyTarget?: DailyOrderItem | null
   onModifyDone?: () => void
 }
 
-export function OrderView({ stocks, initialCode, initialName, orderBook = null, liveTrade = null, onStockChange, modifyTarget, onModifyDone }: Props) {
+export function OrderView({ stocks, initialCode, initialName, orderBook = null, liveTrade = null, onStockChange, onInitialOrderBook, modifyTarget, onModifyDone }: Props) {
   const [subTab, setSubTab] = useState<OrderSubTab>('order')
   const [internalModifyTarget, setInternalModifyTarget] = useState<DailyOrderItem | null>(null)
   const [holdings, setHoldings] = useState<AssetItem[]>([])
@@ -190,10 +192,17 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
       const config = loadKisConfig()
       if (config.appKey && config.appSecret) {
         const token = await getAccessToken()
-        const price = await fetchPrice(code, token)
+        // 현재가 + 호가 병렬 조회
+        const [price, askingPrice] = await Promise.all([
+          fetchPrice(code, token),
+          fetchAskingPrice(code, token),
+        ])
         if (price) {
           setCurrentPrice(price)
           if (orderType === '00') setInputPrice(price.price)
+        }
+        if (askingPrice) {
+          onInitialOrderBook?.(askingPrice)
         }
       }
     } catch (e) {
