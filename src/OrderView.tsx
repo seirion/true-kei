@@ -299,8 +299,23 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
 
   // 호가창: asks는 매도(낮은→높은), bids는 매수(높은→낮은)
   // 화면에는 위=높은가격, 아래=낮은가격으로 표시
-  const sortedAsks = orderBook ? [...orderBook.asks].sort((a, b) => b.price - a.price) : []
-  const sortedBids = orderBook ? [...orderBook.bids].sort((a, b) => b.price - a.price) : []
+  // 가격 0인 항목: 매도는 상단(spread에서 멀리), 매수는 하단으로 이동
+  const sortedAsks = orderBook
+    ? [...orderBook.asks].sort((a, b) => {
+        if (a.price === 0 && b.price === 0) return 0
+        if (a.price === 0) return -1  // 0은 상단으로
+        if (b.price === 0) return 1
+        return b.price - a.price      // 나머지는 높은 가격이 위
+      })
+    : []
+  const sortedBids = orderBook
+    ? [...orderBook.bids].sort((a, b) => {
+        if (a.price === 0 && b.price === 0) return 0
+        if (a.price === 0) return 1   // 0은 하단으로
+        if (b.price === 0) return -1
+        return b.price - a.price      // 나머지는 높은 가격이 위
+      })
+    : []
   const maxQty = orderBook
     ? Math.max(...orderBook.asks.map(a => a.qty), ...orderBook.bids.map(b => b.qty), 1)
     : 1
