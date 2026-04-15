@@ -494,7 +494,7 @@
   flex-direction: column;
   gap: 0.3rem;
   flex-shrink: 0;
-  min-width: 58px;
+  width: 76px;
 }
 
 .order-type-col .order-label {
@@ -502,7 +502,7 @@
 }
 
 .order-type-btn {
-  padding: 0 0.4rem;
+  width: 100%;
   height: 36px;
   background: #fff;
   border: 1.5px solid #d5cef5;
@@ -528,12 +528,15 @@
   flex-direction: column;
   gap: 0.3rem;
   min-width: 0;
+  align-items: flex-end;
 }
 
 .order-input-row {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  width: 100%;
+  align-items: flex-end;
 }
 
 .order-label-inline {
@@ -542,6 +545,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  text-align: right;
 }
 
 .price-input-wrap.disabled {
@@ -553,7 +557,7 @@
 .order-aux-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.4rem;
   flex-wrap: wrap;
 }
