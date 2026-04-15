@@ -341,7 +341,7 @@ function App() {
                           </span>
                           <span className="col-price-wrap">
                             <span className={`col-price ${krxChange.cls}`}>{row.priceLoading ? '…' : formatPrice(row.krx?.price ?? '-')}</span>
-                            {showNxt && <span className={`col-price nxt-price ${nxtChange!.cls}`}>NXT {formatPrice(row.nxt!.price)}</span>}
+                            {showNxt && <span className={`col-price nxt-price ${nxtChange!.cls}`}><span className="nxt-badge">N</span> {formatPrice(row.nxt!.price)}</span>}
                           </span>
                           <span className="col-change-wrap">
                             <span className={`col-change ${krxChange.cls}`}>{row.priceLoading ? '' : krxChange.text}</span>
