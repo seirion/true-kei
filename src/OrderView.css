@@ -533,19 +533,19 @@
 
 .order-input-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
   width: 100%;
-  align-items: flex-end;
+  justify-content: flex-end;
 }
 
 .order-label-inline {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: #9e92c8;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .price-input-wrap.disabled {
