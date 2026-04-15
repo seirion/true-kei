@@ -511,10 +511,11 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
           </div>
         )}
 
-        {/* 주문 유형 */}
-        <div className="order-section">
-          <label className="order-label">주문 유형</label>
-          <div className="order-type-group">
+        {/* 주문 유형 + 단가/수량 그리드 */}
+        <div className="order-type-inputs-grid">
+          {/* 좌: 주문 유형 버튼 세로 배치 */}
+          <div className="order-type-col">
+            <span className="order-label">유형</span>
             {(Object.entries(ORDER_TYPE_LABEL) as [OrderType, string][]).map(([val, label]) => (
               <button
                 key={val}
@@ -527,60 +528,61 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
               >{label}</button>
             ))}
           </div>
+
+          {/* 우: 단가 + 수량 세로 배치 */}
+          <div className="order-inputs-col">
+            {/* 단가 */}
+            <div className="order-input-row">
+              <span className="order-label-inline">{orderType === '00' ? '단가' : '단가'}</span>
+              <div className={`price-input-wrap${orderType === '01' ? ' disabled' : ''}`}>
+                <button className="step-btn" disabled={orderType === '01'} onClick={() => {
+                  const p = parseInt(inputPrice.replace(/,/g, ''), 10)
+                  if (!isNaN(p)) { const next = stepPrice(p, false); setInputPrice(String(next)); fetchBuyableForPrice(next) }
+                }}>▼</button>
+                <input
+                  className="order-input"
+                  type="number"
+                  placeholder={orderType === '01' ? '시장가' : '주문 단가'}
+                  disabled={orderType === '01'}
+                  value={inputPrice}
+                  onChange={e => setInputPrice(e.target.value)}
+                  onBlur={handlePriceBlur}
+                />
+                <button className="step-btn" disabled={orderType === '01'} onClick={() => {
+                  const p = parseInt(inputPrice.replace(/,/g, ''), 10)
+                  if (!isNaN(p)) { const next = stepPrice(p, true); setInputPrice(String(next)); fetchBuyableForPrice(next) }
+                }}>▲</button>
+                <span className="input-unit">원</span>
+              </div>
+            </div>
+
+            {/* 수량 */}
+            <div className="order-input-row">
+              <span className="order-label-inline">수량</span>
+              <div className="price-input-wrap">
+                <button className="step-btn" onClick={() => {
+                  const q = parseInt(inputQty, 10)
+                  if (!isNaN(q) && q > 1) setInputQty(String(q - 1))
+                }}>▼</button>
+                <input
+                  className="order-input"
+                  type="number"
+                  placeholder="주문 수량"
+                  value={inputQty}
+                  onChange={e => setInputQty(e.target.value)}
+                />
+                <button className="step-btn" onClick={() => {
+                  const q = parseInt(inputQty, 10)
+                  setInputQty(String(isNaN(q) ? 1 : q + 1))
+                }}>▲</button>
+                <span className="input-unit">주</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* 단가 */}
-        {orderType === '00' && (
-          <div className="order-section">
-            <label className="order-label">단가</label>
-            <div className="price-input-wrap">
-              <button className="step-btn" onClick={() => {
-                const p = parseInt(inputPrice.replace(/,/g, ''), 10)
-                if (!isNaN(p)) { const next = stepPrice(p, false); setInputPrice(String(next)); fetchBuyableForPrice(next) }
-              }}>▼</button>
-              <input
-                className="order-input"
-                type="number"
-                placeholder="주문 단가"
-                value={inputPrice}
-                onChange={e => setInputPrice(e.target.value)}
-                onBlur={handlePriceBlur}
-              />
-              <button className="step-btn" onClick={() => {
-                const p = parseInt(inputPrice.replace(/,/g, ''), 10)
-                if (!isNaN(p)) { const next = stepPrice(p, true); setInputPrice(String(next)); fetchBuyableForPrice(next) }
-              }}>▲</button>
-              <span className="input-unit">원</span>
-            </div>
-            {currentPrice && (
-              <div className="price-hint">
-                현재가 <strong>{fmt(parseInt(currentPrice.price, 10))}</strong>원
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 수량 */}
-        <div className="order-section">
-          <label className="order-label">수량</label>
-          <div className="price-input-wrap">
-            <button className="step-btn" onClick={() => {
-              const q = parseInt(inputQty, 10)
-              if (!isNaN(q) && q > 1) setInputQty(String(q - 1))
-            }}>▼</button>
-            <input
-              className="order-input"
-              type="number"
-              placeholder="주문 수량"
-              value={inputQty}
-              onChange={e => setInputQty(e.target.value)}
-            />
-            <button className="step-btn" onClick={() => {
-              const q = parseInt(inputQty, 10)
-              setInputQty(String(isNaN(q) ? 1 : q + 1))
-            }}>▲</button>
-            <span className="input-unit">주</span>
-          </div>
+        {/* 보조 정보 + 수량 빠른 버튼 */}
+        <div className="order-aux-row">
           <div className="qty-quick">
             {[0.1, 0.25, 0.5, 1].map(pct => (
               <button key={pct} className="qty-btn" onClick={() => setQtyPercent(pct)}>
@@ -588,15 +590,17 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
               </button>
             ))}
           </div>
+          {orderType === '00' && currentPrice && (
+            <div className="price-hint">현재가 <strong>{fmt(parseInt(currentPrice.price, 10))}</strong>원</div>
+          )}
           {side === 'buy' && buyableInfo && (
             <div className="price-hint">
-              매수 가능: <strong>{fmt(buyableInfo.maxBuyQty)}</strong>주 ({fmt(buyableInfo.buyableAmount)}원)
+              매수가능 <strong>{fmt(buyableInfo.maxBuyQty)}</strong>주
             </div>
           )}
           {side === 'sell' && holdingItem && (
             <div className="price-hint">
-              보유: <strong>{fmt(holdingItem.holdingQty)}</strong>주
-              (매입가 {fmt(holdingItem.purchaseAvgPrice)}원)
+              보유 <strong>{fmt(holdingItem.holdingQty)}</strong>주
             </div>
           )}
         </div>
