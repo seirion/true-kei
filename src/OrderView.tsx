@@ -414,7 +414,6 @@ export function OrderView({ stocks, initialCode, initialName, orderBook = null, 
 
         {/* 종목 검색 */}
         <div className="order-section">
-          <label className="order-label">종목</label>
           <div className="stock-search-wrap">
             <div className="search-input-row">
               <input
