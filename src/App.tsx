@@ -59,11 +59,12 @@ function App() {
     setActiveTab(tab)
     localStorage.setItem('last_tab', tab)
     const newMode = tab === 'order' ? 'order' : 'watchlist'
-    if (newMode !== wsModeRef.current) {
-      wsModeRef.current = newMode
-      const ws = kisWsRef.current
-      if (ws) applyWsSubscription(ws, newMode)
-    }
+    // 항상 재구독: 탭 복귀 시 시간대가 바뀌었을 수 있음
+    // (정규장 → assets 체류 → NXT 시간에 watchlist 복귀하면
+    //  H0STCNT0 구독 유지 상태로 NXT 데이터를 받지 못하는 문제 방지)
+    wsModeRef.current = newMode
+    const ws = kisWsRef.current
+    if (ws) applyWsSubscription(ws, newMode)
   }
   const [watchList, setWatchList] = useState<string[][]>([])
   const [watchNames, setWatchNames] = useState<(string | null)[]>([])
@@ -131,10 +132,10 @@ function App() {
       if (document.hidden) {
         ws.disconnect()
       } else {
-        ws.connect()
-        // connect 후 onopen에서 자동 복원되나, 구독 목록은 applyWsSubscription으로 최신화
-        // (onopen에서 subscribedCodes를 다시 보내므로 여기서는 재적용만)
-        applyWsSubscription(ws, wsModeRef.current)
+        // connect() 시 onopen 에서 subscribedCodes 를 복원하지만,
+        // 시간대가 바뀌었을 수 있으므로 (NXT 진입 등) 연결 완료 후 재구독 적용.
+        // unsubscribeAll 후 subscribe 로 최신 tr_id(H0STCNT0/H0NXCNT0) 로 재구독.
+        ws.connectWithCallback(() => applyWsSubscription(ws, wsModeRef.current))
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)

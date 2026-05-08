@@ -79,6 +79,27 @@ export class KisWebSocket {
     this.onExecution = onExecution ?? null
   }
 
+  /**
+   * 연결 성공(onopen) 후 콜백 실행.
+   * 시간대 변경(NXT 진입 등)으로 tr_id 가 바뀌었을 때 재구독을 정확히 적용하기 위해 사용.
+   */
+  connectWithCallback(onReady: () => void) {
+    if (this.ws) {
+      // 이미 연결 중이거나 연결됨
+      if (this.ws.readyState === WebSocket.OPEN) {
+        onReady()
+      } else {
+        const prev = this.ws.onopen as (() => void) | null
+        this.ws.onopen = () => { prev?.(); onReady() }
+      }
+      return
+    }
+    this._pendingCallback = onReady
+    this.connect()
+  }
+
+  private _pendingCallback: (() => void) | null = null
+
   connect() {
     if (this.ws) return
     console.log('Connecting to KIS WebSocket proxy...')
@@ -90,6 +111,11 @@ export class KisWebSocket {
       // 기존 구독 복원
       this.subscribedCodes.forEach(code => this.sendSubscribe(code, true))
       this.subscribedAspCodes.forEach(code => this.sendSubscribeAsp(code, true))
+      // 연결 완료 후 pending 콜백 실행 (ex. 시간대 변경 시 재구독)
+      if (this._pendingCallback) {
+        this._pendingCallback()
+        this._pendingCallback = null
+      }
     }
 
     this.ws.onmessage = (event) => {
@@ -117,7 +143,8 @@ export class KisWebSocket {
     }
     this.ws?.close()
     this.ws = null
-    this.subscribedCodes.clear()
+    // subscribedCodes 는 유지: connect() 후 onopen 에서 복원에 사용됨
+    // (clear 하면 visibilitychange visible 복귀 시 재구독 목록이 사라짐)
   }
 
   subscribe(codes: string[]) {
