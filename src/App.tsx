@@ -235,23 +235,39 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeGroup])
 
-  const loadGroupPrices = async (codes: string[]) => {
+  const loadGroupPrices = async (codes: string[], merge = false) => {
     setPriceLoading(true); setError(null)
     try {
-      const result = new Map<string, KisPrice>()
+      if (!merge) { setPrices(new Map()); setNxtPrices(new Map()) }
       await fetchPrices(codes, (code, price) => {
-        if (price) { result.set(code, price); setPrices(new Map(result)) }
+        if (price) setPrices(prev => new Map(prev).set(code, price))
       }, 'J')
       if (!isRegularHour()) {
-        const nxtResult = new Map<string, KisPrice>()
         await fetchPrices(codes, (code, price) => {
-          if (price) { nxtResult.set(code, price); setNxtPrices(new Map(nxtResult)) }
+          if (price) setNxtPrices(prev => new Map(prev).set(code, price))
         }, 'NX')
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '현재가 조회 실패')
     } finally { setPriceLoading(false) }
   }
+
+  // 관심 종목 변경 시: WS 재구독 + 신규 종목 현재가 조회
+  const handleWatchListChange = useCallback((newList: string[][]) => {
+    watchListRef.current = newList
+    setWatchList(newList)
+    // WS 재구독 (추가/삭제 반영)
+    const ws = kisWsRef.current
+    if (ws && wsModeRef.current === 'watchlist') applyWsSubscription(ws, 'watchlist')
+    // 새로 추가된 종목만 현재가 조회 (기존 prices 유지)
+    const allCodes = [...new Set((newList[activeGroupRef.current] ?? []).filter(Boolean))]
+    setPrices(prev => {
+      const newCodes = allCodes.filter(c => !prev.has(c))
+      if (newCodes.length > 0) loadGroupPrices(newCodes, true)
+      return prev
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyWsSubscription])
 
   const buildRows = (codes: string[]): StockRow[] =>
     codes.map((code) => {
@@ -297,7 +313,7 @@ function App() {
             <SearchModal
               stocks={stocks} watchList={watchList} activeGroup={activeGroup}
               uid={user.uid}
-              onWatchListChange={(newList) => { watchListRef.current = newList; setWatchList(newList) }}
+              onWatchListChange={handleWatchListChange}
               onClose={closeSearch}
             />
           )}
